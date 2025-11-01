@@ -9,8 +9,9 @@ cmds = [
 
 [phases.build]
 cmds = [
-  "cd backend && npm run build"
+  "cd backend && npm run build",
+  "cd backend && ls -la dist/ || echo 'WARNING: dist folder not found after build'"
 ]
 
 [start]
-cmd = "cd backend && npx prisma migrate deploy && npm run start:prod"
+cmd = "cd backend && if [ ! -d dist ]; then echo 'Building...' && npm run build; fi && npx prisma migrate deploy && npm run start:prod"
