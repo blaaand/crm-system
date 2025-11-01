@@ -1,0 +1,61 @@
+/* إضافة تحسينات للعرض الكامل */
+
+/* إزالة المسافات الافتراضية */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  width: 100% !important;
+  height: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow-x: hidden;
+}
+
+#root {
+  width: 100% !important;
+  height: 100vh !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+/* تحسين responsive للشاشات الكبيرة */
+@media (min-width: 1024px) {
+  .container-fullwidth {
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+}
+
+/* إخفاء scrollbar الأفقي غير المرغوب فيه */
+body {
+  overflow-x: hidden;
+}
+
+/* تحسين لوحة Kanban */
+.kanban-container {
+  width: 100vw;
+  height: calc(100vh - 80px);
+  overflow: hidden;
+}
+
+.kanban-scroll {
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-bottom: 1rem;
+}
+
+/* إصلاح مشكلة RTL مع Flexbox */
+.rtl-flex {
+  direction: ltr;
+}
+
+.rtl-flex > * {
+  direction: rtl;
+}

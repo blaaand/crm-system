@@ -1,0 +1,49 @@
+services:
+  # Backend Service
+  - type: web
+    name: crm-backend
+    env: node
+    region: frankfurt
+    plan: free
+    buildCommand: cd backend && npm install && npx prisma generate && npm run build
+    startCommand: cd backend && npx prisma migrate deploy && npm run start:prod
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: CORS_ORIGIN
+        value: https://crm-frontend.onrender.com
+      - key: PORT
+        value: 3000
+      - key: AWS_ACCESS_KEY_ID
+        sync: false
+      - key: AWS_SECRET_ACCESS_KEY
+        sync: false
+      - key: AWS_REGION
+        sync: false
+      - key: AWS_S3_BUCKET
+        sync: false
+
+  # Frontend Service (Static Site)
+  - type: web
+    name: crm-frontend
+    env: static
+    region: frankfurt
+    buildCommand: cd frontend && npm install && npm run build
+    staticPublishPath: frontend/dist
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+
+  # PostgreSQL Database
+  - type: pspg
+    name: crm-database
+    region: frankfurt
+    plan: free
+    databaseName: crm_db
+    user: crm_user
+
