@@ -69,13 +69,14 @@ api.interceptors.response.use(
     if (error.response?.data?.message) {
       toast.error(error.response.data.message)
     } else if (error.code === 'ECONNREFUSED' || error.code === 'ERR_NETWORK' || error.message === 'Network Error' || error.message?.includes('network')) {
-      toast.error('لا يمكن الاتصال بالخادم. تأكد من تشغيل الخادم الخلفي على المنفذ 3000', {
+      toast.error('لا يمكن الاتصال بالخادم. تأكد من أن Backend يعمل على المنفذ 3000', {
         duration: 6000,
       })
       console.error('Network Error Details:', {
         code: error.code,
         message: error.message,
         config: error.config,
+        baseURL: API_BASE_URL,
       })
     } else if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
       toast.error('انتهت مهلة الاتصال. الخادم يستغرق وقتاً أطول. حاول مرة أخرى', {
