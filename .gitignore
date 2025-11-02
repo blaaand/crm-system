@@ -72,3 +72,20 @@ ENV/
 *.bak
 *.backup
 *.old
+
+# Deployment platforms
+.vercel/
+.railway/
+.render/
+.firebase/
+
+# Environment backup files
+.env.old
+.env.backup
+.env.production.local
+.env.development.local
+
+# Package manager caches (keep clean)
+.npm/
+.yarn/
+.pnpm/
