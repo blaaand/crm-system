@@ -10,11 +10,12 @@ import {
 } from '@heroicons/react/24/outline'
 import toast from 'react-hot-toast'
 import { useAuthStore } from '../stores/authStore'
-import { generateEradExcel, generateOfferExcel, generateCarHandoverExcel } from '../utils/excelExport'
-import { requestsService } from '../services/requestsService'
-import { banksService } from '../services/banksService'
-import { inventoryService } from '../services/inventoryService'
+// import { generateEradExcel, generateOfferExcel, generateCarHandoverExcel } from '../utils/excelExport'
+// import { requestsService } from '../services/requestsService'
+// import { banksService } from '../services/banksService'
+// import { inventoryService } from '../services/inventoryService'
 import { filesService, SystemFile } from '../services/filesService'
+import { UserRole } from '../types'
 
 interface FileItem {
   id: string
@@ -28,25 +29,25 @@ interface FileItem {
 
 export default function Files() {
   const { hasAnyRole } = useAuthStore()
-  const canUpload = hasAnyRole(['ADMIN', 'MANAGER'])
+  const canUpload = hasAnyRole([UserRole.ADMIN, UserRole.MANAGER])
   const [showUploadModal, setShowUploadModal] = useState(false)
   const [newFileName, setNewFileName] = useState('')
   const [newFile, setNewFile] = useState<File | null>(null)
   
   // Load requests data (keeping for other features if needed)
-  const { data: requestsData } = useQuery('requests', () => requestsService.getRequests({ page: 1, limit: 100 }))
-  const { data: banksData } = useQuery('banks', banksService.getBanks)
-  const { data: inventoryData } = useQuery(
-    'inventory',
-    async () => {
-      try {
-        const result = await inventoryService.getInventory()
-        return result
-      } catch (error) {
-        return { headers: [], data: [] }
-      }
-    }
-  )
+  // const { data: requestsData } = useQuery('requests', () => requestsService.getRequests({ page: 1, limit: 100 }))
+  // const { data: banksData } = useQuery('banks', banksService.getBanks)
+  // const { data: inventoryData } = useQuery(
+  //   'inventory',
+  //   async () => {
+  //     try {
+  //       const result = await inventoryService.getInventory()
+  //       return result
+  //     } catch (error) {
+  //       return { headers: [], data: [] }
+  //     }
+  //   }
+  // )
   const { data: savedFiles, refetch: refetchFiles } = useQuery('system-files', filesService.getFiles)
 
   // Initialize file list with templates

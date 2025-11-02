@@ -9,10 +9,10 @@ import {
   useSensor,
   useSensors,
 } from '@dnd-kit/core'
-import {
-  SortableContext,
-  verticalListSortingStrategy,
-} from '@dnd-kit/sortable'
+// import {
+//   SortableContext,
+//   verticalListSortingStrategy,
+// } from '@dnd-kit/sortable'
 import { requestsService } from '../services/requestsService'
 import { Request, RequestStatus } from '../types'
 import KanbanColumn from '../components/KanbanColumn'
@@ -103,14 +103,14 @@ export default function KanbanBoard() {
     return null
   }
 
-  const findStatusByRequestId = (id: string): RequestStatus | null => {
-    if (!kanbanData) return null
-    for (const column of kanbanData) {
-      const request = column.requests.find((r) => r.id === id)
-      if (request) return column.status
-    }
-    return null
-  }
+  // const findStatusByRequestId = (id: string): RequestStatus | null => {
+  //   if (!kanbanData) return null
+  //   for (const column of kanbanData) {
+  //     const request = column.requests.find((r) => r.id === id)
+  //     if (request) return column.status
+  //   }
+  //   return null
+  // }
 
   if (isLoading) {
     return (

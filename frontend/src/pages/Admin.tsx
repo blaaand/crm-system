@@ -3,10 +3,11 @@ import { useAuthStore } from '../stores/authStore'
 import { authService } from '../services/authService'
 import { TrashIcon, PencilIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline'
 import toast from 'react-hot-toast'
+import { UserRole } from '../types'
 
 export default function Admin() {
   const { hasAnyRole } = useAuthStore()
-  const isAdmin = hasAnyRole(['ADMIN'])
+  const isAdmin = hasAnyRole([UserRole.ADMIN])
   const [name, setName] = useState('')
   const [phone, setPhone] = useState('')
   const [password, setPassword] = useState('')

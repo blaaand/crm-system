@@ -1,9 +1,10 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from 'react-query'
-import { PlusIcon, BanknotesIcon, PencilIcon, TrashIcon, CheckIcon } from '@heroicons/react/24/outline'
+import { PlusIcon, BanknotesIcon, /* PencilIcon, */ TrashIcon, CheckIcon } from '@heroicons/react/24/outline'
 import toast from 'react-hot-toast'
-import banksService, { Bank, BankRate, EmployerType } from '../services/banksService'
+import banksService, { Bank, /* BankRate, */ EmployerType } from '../services/banksService'
 import { useAuthStore } from '../stores/authStore'
+import { UserRole } from '../types'
 
 // Employment types
 const employerTypes: EmployerType[] = [
@@ -22,7 +23,7 @@ const clientTypes = [
 
 export default function BanksFinancing() {
   const { hasAnyRole } = useAuthStore()
-  const canEdit = hasAnyRole(['ADMIN','MANAGER'])
+  const canEdit = hasAnyRole([UserRole.ADMIN, UserRole.MANAGER])
   const [selectedBank, setSelectedBank] = useState<Bank | null>(null)
   const [showAddBank, setShowAddBank] = useState(false)
   const [newBankData, setNewBankData] = useState({ name: '', code: '', notes: '' })
@@ -39,7 +40,7 @@ export default function BanksFinancing() {
     onSuccess: () => {
       queryClient.invalidateQueries('banks')
       setShowAddBank(false)
-      setNewBankData({ name: '', code: '' })
+      setNewBankData({ name: '', code: '', notes: '' })
       toast.success('تم إضافة البنك بنجاح')
     },
     onError: () => {
@@ -47,15 +48,15 @@ export default function BanksFinancing() {
     }
   })
 
-  const updateRateMutation = useMutation(banksService.updateBankRate, {
-    onSuccess: () => {
-      queryClient.invalidateQueries('banks')
-      toast.success('تم تحديث النسبة بنجاح')
-    },
-    onError: () => {
-      toast.error('حدث خطأ في تحديث النسبة')
-    }
-  })
+  // const updateRateMutation = useMutation(banksService.updateBankRate, {
+  //   onSuccess: () => {
+  //     queryClient.invalidateQueries('banks')
+  //     toast.success('تم تحديث النسبة بنجاح')
+  //   },
+  //   onError: () => {
+  //     toast.error('حدث خطأ في تحديث النسبة')
+  //   }
+  // })
 
   const deleteBankMutation = useMutation(banksService.deleteBank, {
     onSuccess: () => {
@@ -375,7 +376,7 @@ export default function BanksFinancing() {
                 <button
                   onClick={() => {
                     setShowAddBank(false)
-                    setNewBankData({ name: '', code: '' })
+                    setNewBankData({ name: '', code: '', notes: '' })
                   }}
                   className="btn btn-outline flex-1"
                 >

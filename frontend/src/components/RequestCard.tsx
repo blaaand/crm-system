@@ -186,24 +186,24 @@ export default function RequestCard({ request, isDragging }: RequestCardProps) {
             </div>
             
             <div className="flex items-center gap-3">
-              {request._count?.attachments > 0 && (
+              {(request._count?.attachments ?? 0) > 0 && (
                 <div className="flex items-center gap-1 px-2 py-1 bg-gray-100 rounded-md">
                   <PaperClipIcon className="h-3.5 w-3.5 text-gray-600" />
-                  <span className="text-xs font-medium text-gray-700">{request._count.attachments}</span>
+                  <span className="text-xs font-medium text-gray-700">{request._count?.attachments}</span>
                 </div>
               )}
               
-              {request._count?.comments > 0 && (
+              {(request._count?.comments ?? 0) > 0 && (
                 <div className="flex items-center gap-1 px-2 py-1 bg-blue-100 rounded-md">
                   <ChatBubbleLeftIcon className="h-3.5 w-3.5 text-blue-600" />
-                  <span className="text-xs font-medium text-blue-700">{request._count.comments}</span>
+                  <span className="text-xs font-medium text-blue-700">{request._count?.comments}</span>
                 </div>
               )}
 
-              {request._count?.events > 0 && (
+              {(request._count?.events ?? 0) > 0 && (
                 <div className="flex items-center gap-1 px-2 py-1 bg-purple-100 rounded-md">
                   <ClockIcon className="h-3.5 w-3.5 text-purple-600" />
-                  <span className="text-xs font-medium text-purple-700">{request._count.events}</span>
+                  <span className="text-xs font-medium text-purple-700">{request._count?.events}</span>
                 </div>
               )}
             </div>

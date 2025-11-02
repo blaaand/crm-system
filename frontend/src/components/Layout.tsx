@@ -2,11 +2,12 @@ import { ReactNode, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { useAuthStore } from '../stores/authStore'
 import { useAuthGuard } from '../hooks/useAuthGuard'
+import { UserRole } from '../types'
 import {
   HomeIcon,
   UsersIcon,
   ClipboardDocumentListIcon,
-  ViewColumnsIcon,
+  // ViewColumnsIcon,
   CogIcon,
   CalculatorIcon,
   DocumentTextIcon,
@@ -36,7 +37,7 @@ const navigation = [
 
 export default function Layout({ children }: LayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const { user, logout, hasAnyRole } = useAuthStore()
+  const { user, /* logout, */ hasAnyRole } = useAuthStore()
   const location = useLocation()
   
   // تحقق من المصادقة عند كل تنقل
@@ -45,7 +46,7 @@ export default function Layout({ children }: LayoutProps) {
   const filteredNavigation = navigation.filter((item) => {
     // Admin-only sections
     if (item.href === '/admin' || item.href === '/formulas' || item.href === '/audit') {
-      return hasAnyRole(['ADMIN'])
+      return hasAnyRole([UserRole.ADMIN])
     }
     // Files page is visible to all roles (upload permission handled in page)
     // Inventory and Banks should be visible to all roles (AGENT read-only handled in page)

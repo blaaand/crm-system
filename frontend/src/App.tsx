@@ -20,7 +20,7 @@ import Inventory from './pages/Inventory'
 import Files from './pages/Files'
 
 function App() {
-  const { user, isAuthenticated, isLoading } = useAuthStore()
+  const { /* user, */ isAuthenticated, isLoading } = useAuthStore()
 
   // Check if we have tokens but not authenticated (app just loaded)
   const hasTokens = localStorage.getItem('accessToken') && localStorage.getItem('refreshToken')

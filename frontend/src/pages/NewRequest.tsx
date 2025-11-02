@@ -116,10 +116,10 @@ export default function NewRequest() {
     platePrice, 
     shippingPrice, 
     additionalPrice,
-    carName,
-    additionalFees,
+    // carName,
+    // additionalFees,
     registration,
-    otherAdditions,
+    // otherAdditions,
     salary,
     salaryBankId,
     financingBankId,
@@ -454,7 +454,7 @@ export default function NewRequest() {
   // Fetch selected client details
   const { data: selectedClient } = useQuery(
     ['client', watchedValues.clientId],
-    () => clientsService.getClient(watchedValues.clientId),
+    () => clientsService.getClient(watchedValues.clientId || ''),
     { enabled: !!watchedValues.clientId && watchedValues.clientId !== '' }
   )
 

@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { /* useState, */ useEffect, useMemo } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from 'react-query'
 import { useForm, useWatch } from 'react-hook-form'
@@ -20,11 +20,11 @@ const workOrganizationOptions = [
 ]
 
 // أنواع الالتزامات
-const obligationTypeOptions = [
-  { id: 'عقاري مدعوم', label: 'عقاري مدعوم' },
-  { id: 'عقاري غير مدعوم', label: 'عقاري غير مدعوم' },
-  { id: 'شخصي', label: 'شخصي' },
-]
+// const obligationTypeOptions = [
+//   { id: 'عقاري مدعوم', label: 'عقاري مدعوم' },
+//   { id: 'عقاري غير مدعوم', label: 'عقاري غير مدعوم' },
+//   { id: 'شخصي', label: 'شخصي' },
+// ]
 
 // Schema for installment details
 const installmentSchema = z.object({
@@ -78,7 +78,7 @@ export default function EditRequest() {
     setValue,
     watch,
     control,
-    formState: { errors, isSubmitting },
+    formState: { /* errors, */ isSubmitting },
   } = useForm<RequestForm>({
     resolver: zodResolver(requestSchema),
   })
@@ -89,7 +89,7 @@ export default function EditRequest() {
   const financingBankId = useWatch({ control, name: 'financingBankId' })
   const salaryBankId = useWatch({ control, name: 'salaryBankId' })
   const workOrganization = useWatch({ control, name: 'workOrganization' })
-  const carName = useWatch({ control, name: 'carName' })
+  // const carName = useWatch({ control, name: 'carName' })
 
   // Fill form with existing data
   useEffect(() => {
@@ -494,7 +494,7 @@ export default function EditRequest() {
                     const reg = parseFloat(watchedValues.registration || '0') || 0
                     const other = parseFloat(watchedValues.otherAdditions || '0') || 0
                     const plate = parseFloat(watchedValues.plateNumber || '0') || 0
-                    const sale = car + add + ship + reg + other + plate - plate + (car + add + ship + reg + other ? plate : 0)
+                    // const sale = car + add + ship + reg + other + plate - plate + (car + add + ship + reg + other ? plate : 0)
                     const priceWithPlateNoTax = (car + add + ship + reg + other) + plate
                     const supportPct = parseFloat(((watchedValues as any)?._supportPct || '0')) || 0
                     const supportAmount = priceWithPlateNoTax * 1.15 * (supportPct / 100)

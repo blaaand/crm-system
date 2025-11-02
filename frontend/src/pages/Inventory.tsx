@@ -1,34 +1,35 @@
-import { useState, useEffect, useRef } from 'react'
-import { DocumentArrowUpIcon, XMarkIcon, MagnifyingGlassIcon, TrashIcon, CheckIcon, ArrowDownTrayIcon, XCircleIcon } from '@heroicons/react/24/outline'
+import React, { useState, useEffect, useRef } from 'react'
+import { DocumentArrowUpIcon, /* XMarkIcon, */ MagnifyingGlassIcon, TrashIcon, CheckIcon, ArrowDownTrayIcon, XCircleIcon } from '@heroicons/react/24/outline'
 import * as XLSX from 'xlsx'
 import { useAuthStore } from '../stores/authStore'
 import { inventoryService } from '../services/inventoryService'
 import toast from 'react-hot-toast'
+import { UserRole } from '../types'
 
-interface InventoryItem {
-  groupName: string
-  specifications: string
-  color: string
-  sellingPrice: number
-  itemName: string
-  itemNumber: string
-  supplier: string
-  warehouse: string
-  carStatus: string
-  costPrice: number
-  costWarehouse: string
-  costAgent: string
-  model: string
-  costColor: string
-  costChassisNumber: string
-  costCarBrand: string
-}
+// interface InventoryItem {
+//   groupName: string
+//   specifications: string
+//   color: string
+//   sellingPrice: number
+//   itemName: string
+//   itemNumber: string
+//   supplier: string
+//   warehouse: string
+//   carStatus: string
+//   costPrice: number
+//   costWarehouse: string
+//   costAgent: string
+//   model: string
+//   costColor: string
+//   costChassisNumber: string
+//   costCarBrand: string
+// }
 
 type InventoryRow = Record<string, any>
 
 export default function Inventory() {
   const { hasAnyRole } = useAuthStore()
-  const canEdit = hasAnyRole(['ADMIN','MANAGER'])
+  const canEdit = hasAnyRole([UserRole.ADMIN, UserRole.MANAGER])
   const topScrollRef = useRef<HTMLDivElement>(null)
   const bottomScrollRef = useRef<HTMLDivElement>(null)
   const [contentWidth, setContentWidth] = useState<number>(0)
@@ -478,7 +479,7 @@ export default function Inventory() {
                         const isSellingPrice = sellingPriceHeader === h
                         const isCostPrice = costPriceHeader === h
                         
-                        let content = value
+                        let content: string | React.ReactNode = value
                         if (isStatus) {
                           content = (
                             <span

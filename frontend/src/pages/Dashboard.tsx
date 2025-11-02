@@ -30,13 +30,13 @@ export default function Dashboard() {
     },
     {
       name: 'طلبات مكتملة',
-      value: requestStats?.requestsByStatus?.find(s => s.status === 'SOLD')?.count || 0,
+      value: requestStats?.requestsByStatus?.find((s: any) => s.status === 'SOLD')?.count || 0,
       icon: CurrencyDollarIcon,
       color: 'bg-yellow-500',
     },
     {
       name: 'طلبات في المتابعة',
-      value: requestStats?.requestsByStatus?.find(s => s.status === 'FOLLOW_UP')?.count || 0,
+      value: requestStats?.requestsByStatus?.find((s: any) => s.status === 'FOLLOW_UP')?.count || 0,
       icon: ArrowTrendingUpIcon,
       color: 'bg-purple-500',
     },
@@ -87,7 +87,7 @@ export default function Dashboard() {
           </div>
           <div className="card-body">
             <div className="space-y-4">
-              {requestStats?.requestsByStatus?.slice(0, 5).map((status) => (
+              {requestStats?.requestsByStatus?.slice(0, 5).map((status: any) => (
                 <div key={status.status} className="flex items-center justify-between">
                   <div className="flex items-center">
                     <div className="w-3 h-3 bg-primary-500 rounded-full ml-3"></div>
@@ -107,7 +107,7 @@ export default function Dashboard() {
           </div>
           <div className="card-body">
             <div className="space-y-4">
-              {clientStats?.clientsByCity?.slice(0, 5).map((city) => (
+              {clientStats?.clientsByCity?.slice(0, 5).map((city: any) => (
                 <div key={city.city} className="flex items-center justify-between">
                   <span className="text-sm text-gray-900">{city.city}</span>
                   <span className="text-sm font-medium text-gray-900">{city.count}</span>

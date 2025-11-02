@@ -15,7 +15,7 @@ import {
   EnvelopeIcon,
   PencilIcon,
   BuildingLibraryIcon,
-  CalendarDaysIcon,
+  // CalendarDaysIcon,
   CurrencyDollarIcon,
   LinkIcon,
   XCircleIcon,
@@ -160,7 +160,7 @@ export default function RequestDetails() {
 
   // Save linked car (store item number in customFields)
   const saveLinkedCarMutation = useMutation(
-    async (carItemNumber: string, carData: Record<string, any>) => {
+    async ({ carItemNumber, carData }: { carItemNumber: string, carData: Record<string, any> }) => {
       const cf = request?.customFields ? (typeof request.customFields === 'string' ? JSON.parse(request.customFields) : request.customFields) : {}
       const newCustomFields = { ...cf, linkedCarItemNumber: carItemNumber, linkedCarData: carData }
       return requestsService.updateRequest(id!, { customFields: JSON.stringify(newCustomFields) })
@@ -184,7 +184,7 @@ export default function RequestDetails() {
     const itemNumberHeader = headers.find(h => h.includes('رقم الصنف') || h.includes('رقم'))
     if (itemNumberHeader && car[itemNumberHeader]) {
       const itemNumber = String(car[itemNumberHeader])
-      saveLinkedCarMutation.mutate(itemNumber, car)
+      saveLinkedCarMutation.mutate({ carItemNumber: itemNumber, carData: car })
       setLinkedCar(car)
       setVin(itemNumber) // Update VIN field with item number
     } else {
@@ -604,9 +604,9 @@ export default function RequestDetails() {
                           <div className="bg-indigo-50 rounded-lg p-3 border border-indigo-200">
                             <p className="text-xs text-indigo-600 mb-1">البنك المختار للتمويل</p>
                             <p className="text-lg font-bold text-indigo-900">
-                              {request.installmentDetails.financingBankId === 'rajhi' 
+                              {request.installmentDetails?.financingBankId === 'rajhi' 
                                 ? 'بنك الراجحي' 
-                                : banksData?.find(bank => bank.id === request.installmentDetails.financingBankId)?.name || 'بنك غير محدد'}
+                                : banksData?.find(bank => bank.id === request.installmentDetails?.financingBankId)?.name || 'بنك غير محدد'}
                             </p>
                           </div>
                         )}
@@ -731,7 +731,7 @@ export default function RequestDetails() {
                       return (
                         <div className="space-y-4">
                           {/* معلومات البنك */}
-                          {request.installmentDetails.financingBank.notes && (
+                          {request.installmentDetails.financingBank?.notes && (
                             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                               <h5 className="text-sm font-bold text-blue-900 mb-2">📝 ملاحظات البنك</h5>
                               <p className="text-sm text-blue-800 whitespace-pre-wrap">{request.installmentDetails.financingBank.notes}</p>
@@ -1336,7 +1336,7 @@ export default function RequestDetails() {
               const finalPayment = finalPaymentPercentage * finalPriceWithTaxAndPlate
               
               // 5. التأمين للسنة الواحدة = (نسبة التأمين * 1.15 * سعر سيارة شامل الضريبة واللوح)
-              const annualInsurance = insurancePercentage * 1.15 * finalPriceWithTaxAndPlate
+              // const annualInsurance = insurancePercentage * 1.15 * finalPriceWithTaxAndPlate
               
               // 6. التأمين على إجمالي سنوات التقسيط (مع انخفاض قيمة السيارة 15% كل سنة)
               let totalInsuranceAllYears = 0
@@ -1642,7 +1642,7 @@ export default function RequestDetails() {
                     </div>
                     <div className="flex items-center gap-2">
                       <a
-                        href={`${import.meta.env.VITE_API_URL || '/api'}/attachments/${att.id}/download`}
+                        href={`${(import.meta as any).env?.VITE_API_URL || '/api'}/attachments/${att.id}/download`}
                         className="btn-outline btn-sm"
                       >
                         تنزيل
@@ -1992,7 +1992,7 @@ export default function RequestDetails() {
                     })()
 
                     // Save handover data to customFields
-                    const currentCf = request.customFields ? (typeof request.customFields === 'string' ? JSON.parse(request.customFields) : request.customFields) : {}
+                    // const currentCf = request.customFields ? (typeof request.customFields === 'string' ? JSON.parse(request.customFields) : request.customFields) : {}
                     const handoverDataToSave = {
                       handoverBranch: handoverData.branch,
                       handoverWarehouse: handoverData.warehouse,
@@ -2004,7 +2004,7 @@ export default function RequestDetails() {
                       handoverCarCategory: handoverData.carCategory,
                       handoverPlateNumber: handoverData.plateNumber,
                     }
-                    const newCustomFields = { ...currentCf, ...handoverDataToSave }
+                    // const newCustomFields = { ...currentCf, ...handoverDataToSave }
                     await saveCustomFieldsMutation.mutateAsync(handoverDataToSave)
 
                     const url = URL.createObjectURL(blob)

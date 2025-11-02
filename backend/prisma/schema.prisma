@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -10,38 +7,34 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// Enums are not supported in SQLite, using String instead
-
 model User {
-  id           String    @id @default(uuid())
-  name         String
-  email        String    @unique
-  phone        String?
-  passwordHash String
-  role         String    @default("AGENT")
-  lastLogin    DateTime?
-  active       Boolean   @default(true)
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
-
-  // Relations
+  id                  String         @id @default(uuid())
+  name                String
+  email               String         @unique
+  phone               String?
+  passwordHash        String
+  role                String         @default("AGENT")
+  lastLogin           DateTime?
+  active              Boolean        @default(true)
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
+  uploadedAttachments Attachment[]
+  auditLogs           AuditLog[]
+  createdBanks        Bank[]
   createdClients      Client[]
+  comments            Comment[]
+  createdFormulas     Formula[]
+  uploadedInventory   Inventory[]
+  requestEvents       RequestEvent[]
   assignedRequests    Request[]      @relation("AssignedRequests")
   createdRequests     Request[]      @relation("CreatedRequests")
-  uploadedAttachments Attachment[]
-  comments            Comment[]
-  requestEvents      RequestEvent[]
-  createdBanks        Bank[]
-  createdFormulas     Formula[]
-  auditLogs           AuditLog[]
-  uploadedInventory   Inventory[]
   uploadedSystemFiles SystemFile[]   @relation("UploadedSystemFiles")
 
   @@map("users")
 }
 
 model Client {
-  id             String   @id @default(uuid())
+  id             String       @id @default(uuid())
   name           String
   nationalId     String?
   phonePrimary   String
@@ -52,102 +45,81 @@ model Client {
   source         String?
   notes          String?
   createdById    String
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-
-  // Relations
-  createdBy   User         @relation(fields: [createdById], references: [id])
-  requests    Request[]
-  attachments Attachment[]
-  comments    Comment[]
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  attachments    Attachment[]
+  createdBy      User         @relation(fields: [createdById], references: [id])
+  comments       Comment[]
+  requests       Request[]
 
   @@map("clients")
 }
 
 model Request {
-  id            String   @id @default(uuid())
-  clientId      String
-  title         String
-  type          String   @default("UNKNOWN")
-  requestType   String   @default("CASH") // CASH or INSTALLMENT
-  initialStatus String   @default("NOT_ANSWERED")
-  currentStatus String   @default("NOT_ANSWERED")
-  assignedToId  String?
-  price         Decimal?
-  customFields  String?
-  isArchived    Boolean  @default(false)
-  createdById   String
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-
-  // Relations
-  client             Client              @relation(fields: [clientId], references: [id])
-  assignedTo         User?               @relation("AssignedRequests", fields: [assignedToId], references: [id])
-  createdBy          User                @relation("CreatedRequests", fields: [createdById], references: [id])
-  installmentDetails InstallmentDetails?
+  id                 String              @id @default(uuid())
+  clientId           String
+  title              String
+  type               String              @default("UNKNOWN")
+  requestType        String              @default("CASH")
+  initialStatus      String              @default("NOT_ANSWERED")
+  currentStatus      String              @default("NOT_ANSWERED")
+  assignedToId       String?
+  price              Decimal?
+  customFields       String?
+  isArchived         Boolean             @default(false)
+  createdById        String
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
   attachments        Attachment[]
   comments           Comment[]
+  installmentDetails InstallmentDetails?
   events             RequestEvent[]
+  assignedTo         User?               @relation("AssignedRequests", fields: [assignedToId], references: [id])
+  client             Client              @relation(fields: [clientId], references: [id])
+  createdBy          User                @relation("CreatedRequests", fields: [createdById], references: [id])
 
   @@map("requests")
 }
 
 model InstallmentDetails {
-  id        String @id @default(uuid())
-  requestId String @unique
-
-  // Car pricing details for installments
-  carPrice       Decimal? // سعر السيارة الأساسي
-  additionalFees Decimal? // زيادة إضافية
-  shipping       Decimal? // الشحن
-  registration   Decimal? // التجيير
-  otherAdditions Decimal? // زيادة أخرى
-  plateNumber    Decimal? // اللوح
-
-  // Client additional data
-  age               Int?
-  salaryBankId      String? // البنك الذي ينزل عليه الراتب
-  installmentBankId String? // البنك المراد التقسيط عليه
-  salary            Decimal? // مبلغ الراتب
-
-  // Obligations section
-  obligationTypes     String? // نوع الالتزام (JSON array)
-  deductionPercentage Float? // نسبة الاستقطاع
-  obligation1         Decimal? // التزام 1
-  obligation2         Decimal? // التزام 2 
-  obligation3         Decimal? // التزام 3
-  visaAmount          Decimal? // الفيزا
-
-  // Calculated amounts
-  deductedAmount Decimal? // المبلغ المستقطع
-  finalAmount    Decimal? // المبلغ المستقطع بعد خصم الالتزامات
-
-  // Insurance and services
-  insurancePercentage Float? // نسبة التأمين
-  hasServiceStop      Boolean @default(false) // هل يوجد إيقاف خدمات
-
-  // Financing parameters
-  financingBankId        String? // البنك المختار للتمويل
-  downPaymentPercentage  Float? // نسبة الدفعة الأولى
-  finalPaymentPercentage Float? // نسبة الدفعة الأخيرة
-  profitMargin           Float? // هامش الربح السنوي
-  installmentMonths      Int? // عدد أشهر التقسيط
-
-  // Legacy fields
-  employerType        String?
-  city                String?
-  isTransferredToBank Boolean  @default(false)
-  visaTotalAmount     Decimal?
-  obligations         String? // Legacy field for old obligations
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relations
-  request         Request @relation(fields: [requestId], references: [id], onDelete: Cascade)
-  salaryBank      Bank?   @relation("SalaryBank", fields: [salaryBankId], references: [id])
-  installmentBank Bank?   @relation("InstallmentBank", fields: [installmentBankId], references: [id])
-  financingBank   Bank?   @relation("FinancingBank", fields: [financingBankId], references: [id])
+  id                     String   @id @default(uuid())
+  requestId              String   @unique
+  carPrice               Decimal?
+  additionalFees         Decimal?
+  shipping               Decimal?
+  registration           Decimal?
+  otherAdditions         Decimal?
+  plateNumber            Decimal?
+  age                    Int?
+  salaryBankId           String?
+  installmentBankId      String?
+  salary                 Decimal?
+  obligationTypes        String?
+  deductionPercentage    Float?
+  obligation1            Decimal?
+  obligation2            Decimal?
+  obligation3            Decimal?
+  visaAmount             Decimal?
+  deductedAmount         Decimal?
+  finalAmount            Decimal?
+  insurancePercentage    Float?
+  hasServiceStop         Boolean  @default(false)
+  financingBankId        String?
+  downPaymentPercentage  Float?
+  finalPaymentPercentage Float?
+  profitMargin           Float?
+  installmentMonths      Int?
+  employerType           String?
+  city                   String?
+  isTransferredToBank    Boolean  @default(false)
+  visaTotalAmount        Decimal?
+  obligations            String?
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+  financingBank          Bank?    @relation("FinancingBank", fields: [financingBankId], references: [id])
+  installmentBank        Bank?    @relation("InstallmentBank", fields: [installmentBankId], references: [id])
+  request                Request  @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  salaryBank             Bank?    @relation("SalaryBank", fields: [salaryBankId], references: [id])
 
   @@map("installment_details")
 }
@@ -160,10 +132,8 @@ model RequestEvent {
   comment     String?
   changedById String
   createdAt   DateTime @default(now())
-
-  // Relations
-  request   Request @relation(fields: [requestId], references: [id], onDelete: Cascade)
-  changedBy User    @relation(fields: [changedById], references: [id])
+  changedBy   User     @relation(fields: [changedById], references: [id])
+  request     Request  @relation(fields: [requestId], references: [id], onDelete: Cascade)
 
   @@map("request_events")
 }
@@ -177,11 +147,9 @@ model Attachment {
   mimeType     String
   uploadedById String
   uploadedAt   DateTime @default(now())
-
-  // Relations
-  request    Request? @relation(fields: [requestId], references: [id], onDelete: Cascade)
-  client     Client?  @relation(fields: [clientId], references: [id], onDelete: Cascade)
-  uploadedBy User     @relation(fields: [uploadedById], references: [id])
+  client       Client?  @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  request      Request? @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  uploadedBy   User     @relation(fields: [uploadedById], references: [id])
 
   @@map("attachments")
 }
@@ -194,30 +162,26 @@ model Comment {
   text      String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
-  // Relations
-  request Request? @relation(fields: [requestId], references: [id], onDelete: Cascade)
-  client  Client?  @relation(fields: [clientId], references: [id], onDelete: Cascade)
-  user    User     @relation(fields: [userId], references: [id])
+  client    Client?  @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  request   Request? @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id])
 
   @@map("comments")
 }
 
 model Bank {
-  id          String   @id @default(uuid())
-  name        String   @unique
-  code        String?  @unique
-  notes       String?  // ملاحظات البنك المختار للتمويل
-  createdById String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  // Relations
-  createdBy               User                @relation(fields: [createdById], references: [id])
-  bankRates               BankRate[]
-  salaryBankDetails       InstallmentDetails[] @relation("SalaryBank")
-  installmentBankDetails  InstallmentDetails[] @relation("InstallmentBank")
-  financingBankDetails    InstallmentDetails[] @relation("FinancingBank")
+  id                     String               @id @default(uuid())
+  name                   String               @unique
+  code                   String?              @unique
+  notes                  String?
+  createdById            String
+  createdAt              DateTime             @default(now())
+  updatedAt              DateTime             @updatedAt
+  bankRates              BankRate[]
+  createdBy              User                 @relation(fields: [createdById], references: [id])
+  financingBankDetails   InstallmentDetails[] @relation("FinancingBank")
+  installmentBankDetails InstallmentDetails[] @relation("InstallmentBank")
+  salaryBankDetails      InstallmentDetails[] @relation("SalaryBank")
 
   @@map("banks")
 }
@@ -225,16 +189,13 @@ model Bank {
 model BankRate {
   id           String   @id @default(uuid())
   bankId       String
-  employerType String   // PRIVATE, PRIVATE_UNACCREDITED, GOVERNMENT, MILITARY, RETIRED
-  clientType   String   // TRANSFERRED, NON_TRANSFERRED
-  rate         Float    // Percentage rate (e.g., 4.33 for 4.33%)
+  employerType String
+  clientType   String
+  rate         Float
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+  bank         Bank     @relation(fields: [bankId], references: [id], onDelete: Cascade)
 
-  // Relations
-  bank Bank @relation(fields: [bankId], references: [id], onDelete: Cascade)
-
-  // Unique constraint to prevent duplicate rates
   @@unique([bankId, employerType, clientType])
   @@map("bank_rates")
 }
@@ -249,9 +210,7 @@ model Formula {
   version     Int      @default(1)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-
-  // Relations
-  owner User @relation(fields: [ownerId], references: [id])
+  owner       User     @relation(fields: [ownerId], references: [id])
 
   @@map("formulas")
 }
@@ -264,40 +223,34 @@ model AuditLog {
   targetId   String?
   details    String?
   createdAt  DateTime @default(now())
-
-  // Relations
-  actor User @relation(fields: [actorId], references: [id])
+  actor      User     @relation(fields: [actorId], references: [id])
 
   @@map("audit_logs")
 }
 
 model Inventory {
-  id        String   @id @default(uuid())
-  headers   String   // JSON array of headers
-  data      String   // JSON array of inventory rows
+  id           String   @id @default(uuid())
+  headers      String
+  data         String
   uploadedById String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relations
-  uploadedBy User @relation(fields: [uploadedById], references: [id])
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  uploadedBy   User     @relation(fields: [uploadedById], references: [id])
 
   @@map("inventory")
 }
 
 model SystemFile {
-  id        String   @id @default(uuid())
-  name      String
-  filename  String
-  fileType  String   // 'excel' | 'pdf' | 'image'
-  storagePath String? // Path to file in storage (if saved)
-  mimeType  String?
+  id           String   @id @default(uuid())
+  name         String
+  filename     String
+  fileType     String
+  storagePath  String?
+  mimeType     String?
   uploadedById String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relations
-  uploadedBy User @relation("UploadedSystemFiles", fields: [uploadedById], references: [id])
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  uploadedBy   User     @relation("UploadedSystemFiles", fields: [uploadedById], references: [id])
 
   @@map("system_files")
 }

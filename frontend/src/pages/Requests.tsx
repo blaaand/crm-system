@@ -198,7 +198,7 @@ export default function Requests() {
                   return `${when} | ${who} | ${from} → ${to}${cm}`
                 }).join('\n')
 
-                const commentsText = (r.comments || []).map((c:any) => {
+                const commentsText = ((r as any).comments || []).map((c:any) => {
                   const who = c.author?.name || ''
                   const when = new Date(c.createdAt).toLocaleString('ar-SA', { calendar: 'gregory' })
                   return `${when} | ${who}: ${c.content || ''}`
