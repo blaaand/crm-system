@@ -69,7 +69,8 @@ api.interceptors.response.use(
     if (error.response?.data?.message) {
       toast.error(error.response.data.message)
     } else if (error.code === 'ECONNREFUSED' || error.code === 'ERR_NETWORK' || error.message === 'Network Error' || error.message?.includes('network')) {
-      toast.error('لا يمكن الاتصال بالخادم. تأكد من أن Backend يعمل على المنفذ 3000', {
+      const isLocalApi = API_BASE_URL === '/api' || !API_BASE_URL || API_BASE_URL === 'undefined'
+      toast.error(isLocalApi ? 'خطأ في الاتصال. تأكد من إعداد VITE_API_URL في Environment Variables' : 'لا يمكن الاتصال بالخادم. تأكد من أن Backend يعمل', {
         duration: 6000,
       })
       console.error('Network Error Details:', {
@@ -77,6 +78,9 @@ api.interceptors.response.use(
         message: error.message,
         config: error.config,
         baseURL: API_BASE_URL,
+        VITE_API_URL: import.meta.env.VITE_API_URL,
+        isLocalApi,
+        hint: isLocalApi ? '⚠️ VITE_API_URL غير معرف في Environment Variables!' : '✅ VITE_API_URL معرف بشكل صحيح'
       })
     } else if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
       toast.error('انتهت مهلة الاتصال. الخادم يستغرق وقتاً أطول. حاول مرة أخرى', {
