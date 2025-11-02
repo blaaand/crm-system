@@ -13,6 +13,3 @@ cmds = [
   "ls -la dist/ || echo 'WARNING: dist folder not found after build'"
 ]
 
-[start]
-cmd = "if [ ! -d dist ]; then echo 'Building...' && npm run build; fi && npx prisma migrate deploy && npm run start:prod"
-
