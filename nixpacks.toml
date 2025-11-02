@@ -3,15 +3,15 @@ nixPkgs = ["nodejs-18_x"]
 
 [phases.install]
 cmds = [
-  "cd backend && npm ci",
-  "cd backend && npx prisma generate"
+  "npm ci",
+  "npx prisma generate"
 ]
 
 [phases.build]
 cmds = [
-  "cd backend && npm run build",
-  "cd backend && ls -la dist/ || echo 'WARNING: dist folder not found after build'"
+  "npm run build",
+  "ls -la dist/ || echo 'WARNING: dist folder not found after build'"
 ]
 
 [start]
-cmd = "cd backend && if [ ! -d dist ]; then echo 'Building...' && npm run build; fi && npx prisma migrate deploy && npm run start:prod"
+cmd = "if [ ! -d dist ]; then echo 'Building...' && npm run build; fi && npx prisma migrate deploy && npm run start:prod"
