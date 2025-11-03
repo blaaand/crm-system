@@ -329,14 +329,14 @@ export default function EditRequest() {
     if (!calculateInstallmentCarPrices || !isRajhiSelected) return null
     
     const carPriceWithTaxAndPlate = calculateInstallmentCarPrices.finalPriceWithTaxAndPlate
-    const downPaymentPercentage = parseFloat(downPaymentPercentage || '0') / 100
-    const finalPaymentPercentage = parseFloat(finalPaymentPercentage || '0') / 100
-    const profitMargin = parseFloat(profitMargin || '0') / 100
-    const installmentMonths = parseInt(installmentMonths || '60')
-    const insurancePercentage = parseFloat(insurancePercentage || '0') / 100
+    const downPaymentPct = parseFloat(downPaymentPercentage || '0') / 100
+    const finalPaymentPct = parseFloat(finalPaymentPercentage || '0') / 100
+    const profitMarginPct = parseFloat(profitMargin || '0') / 100
+    const installmentMonthsInt = parseInt(installmentMonths || '60')
+    const insurancePct = parseFloat(insurancePercentage || '0') / 100
 
     // 1. الدفعة الأولى
-    const downPayment = downPaymentPercentage * carPriceWithTaxAndPlate
+    const downPayment = downPaymentPct * carPriceWithTaxAndPlate
 
     // 2. مبلغ التمويل
     const financingAmount = carPriceWithTaxAndPlate - downPayment
@@ -345,28 +345,28 @@ export default function EditRequest() {
     const adminFees = Math.round(Math.min(5000, financingAmount * 0.01) * 1.15)
 
     // 4. الدفعة الأخيرة
-    const finalPayment = finalPaymentPercentage * carPriceWithTaxAndPlate
+    const finalPayment = finalPaymentPct * carPriceWithTaxAndPlate
 
     // 5. التأمين للسنة الواحدة
-    const annualInsurance = insurancePercentage * 1.15 * carPriceWithTaxAndPlate
+    const annualInsurance = insurancePct * 1.15 * carPriceWithTaxAndPlate
 
     // 6. التأمين على إجمالي السنوات (مع انخفاض قيمة السيارة 15% كل سنة)
     let totalInsuranceAllYears = 0
     let currentCarValue = carPriceWithTaxAndPlate
-    const years = Math.ceil(installmentMonths / 12)
+    const years = Math.ceil(installmentMonthsInt / 12)
     
     for (let year = 1; year <= years; year++) {
-      const yearlyInsurance = insurancePercentage * 1.15 * currentCarValue
+      const yearlyInsurance = insurancePct * 1.15 * currentCarValue
       totalInsuranceAllYears += yearlyInsurance
       currentCarValue *= 0.85
     }
 
     // 7. التأمين للشهر الواحد
-    const monthlyInsurance = totalInsuranceAllYears / installmentMonths
+    const monthlyInsurance = totalInsuranceAllYears / installmentMonthsInt
 
     // 8. القسط الشهري باستخدام PMT
-    const monthlyRate = profitMargin / 12
-    const pmtResult = -PMT(monthlyRate, installmentMonths, -(financingAmount + adminFees), finalPayment)
+    const monthlyRate = profitMarginPct / 12
+    const pmtResult = -PMT(monthlyRate, installmentMonthsInt, -(financingAmount + adminFees), finalPayment)
 
     return {
       downPayment,
