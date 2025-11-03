@@ -820,208 +820,6 @@ export default function NewRequest() {
                 // حقول التقسيط
                 <div className="space-y-6">
                   
-                  {/* تفاصيل سعر السيارة للتقسيط + تحليل إيراد سريع */}
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                    {/* تفاصيل السعر */}
-                    <div className="border-2 border-green-200 rounded-lg p-4 bg-green-50">
-                    <h4 className="text-sm font-bold text-green-900 mb-3">تفاصيل سعر السيارة</h4>
-                    
-                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          سعر السيارة الأساسي 🚗
-                        </label>
-                        <input
-                          {...register('carPrice')}
-                          type="number"
-                          step="0.01"
-                          className="input"
-                          placeholder="0.00"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          زيادة إضافية ➕
-                        </label>
-                        <input
-                          {...register('additionalFees')}
-                          type="number"
-                          step="0.01"
-                          className="input"
-                          placeholder="0.00"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          التجيير 📋
-                        </label>
-                        <input
-                          {...register('registration')}
-                          type="number"
-                          step="0.01"
-                          className="input"
-                          placeholder="0.00"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          الشحن 🚚
-                        </label>
-                        <input
-                          {...register('shipping')}
-                          type="number"
-                          step="0.01"
-                          className="input"
-                          placeholder="0.00"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          زيادة أخرى ⚡
-                        </label>
-                        <input
-                          {...register('otherAdditions')}
-                          type="number"
-                          step="0.01"
-                          className="input"
-                          placeholder="0.00"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          اللوح 🏷️
-                        </label>
-                        <input
-                          {...register('plateNumber')}
-                          type="number"
-                          step="0.01"
-                          className="input"
-                          placeholder="0.00"
-                        />
-                      </div>
-                    </div>
-                    </div>
-
-                    {/* تحليل إيراد سريع */}
-                    <div className="border-2 border-yellow-300 rounded-lg p-4 bg-yellow-50">
-                      <h4 className="text-sm font-bold text-yellow-900 mb-3">تحليل ايراد سريع</h4>
-                      <div className="space-y-3">
-                        {/* سعر البيع (تلقائي) */}
-                        <div>
-                          <label className="block text-sm font-semibold text-gray-800 mb-1">سعر البيع (تلقائي)</label>
-                          <input
-                            type="text"
-                            className="input bg-gray-100 cursor-not-allowed"
-                            value={installmentCarPrices ? `${installmentCarPrices.priceWithPlateNoTax.toLocaleString()} ريال` : ''}
-                            disabled
-                          />
-                          <p className="mt-1 text-xs text-gray-600">القيمة من: السعر شامل اللوح (بدون ضريبة)</p>
-                        </div>
-
-                        {/* سعر التكلفة / الشراء */}
-                        <div>
-                          <label className="block text-sm font-semibold text-gray-800 mb-1">سعر التكلفة أو سعر شراء السيارة</label>
-                          <input
-                            type="number"
-                            step="0.01"
-                            className="input"
-                            value={watchedValues as any && (watchedValues as any)._quickCost || ''}
-                            onChange={(e) => setValue('_quickCost' as any, e.target.value)}
-                            placeholder="0.00"
-                          />
-                        </div>
-
-                        {/* مصروفات البيع = التجيير + الشحن + اللوح + زيادة أخرى (+ حسبة الدعم) */}
-                        <div>
-                          <label className="block text-sm font-semibold text-gray-800 mb-1">مصروفات البيع</label>
-                          {(() => {
-                            const reg = parseFloat(registration || '0') || 0
-                            const ship = parseFloat(watchedValues.shipping || '0') || 0
-                            const plate = parseFloat(watchedValues.plateNumber || '0') || 0
-                            const other = parseFloat(watchedValues.otherAdditions || '0') || 0
-                            const sale = installmentCarPrices ? installmentCarPrices.priceWithPlateNoTax : 0
-                            const supportPct = parseFloat(((watchedValues as any)?._supportPct || '0')) || 0
-                            const supportAmount = sale * 1.15 * (supportPct / 100)
-                            const expenses = reg + ship + plate + other + supportAmount
-                            return (
-                              <input
-                                type="text"
-                                className="input bg-gray-100 cursor-not-allowed"
-                                value={`${expenses.toLocaleString()} ريال`}
-                                disabled
-                              />
-                            )
-                          })()}
-                          <p className="mt-1 text-xs text-gray-600">مجموع: التجيير + الشحن + اللوح + زيادة أخرى + حسبة الدعم</p>
-                        </div>
-
-                        {/* صافي الايراد (مبلغ ونسبة) */}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                          {(() => {
-                            const sale = installmentCarPrices ? installmentCarPrices.priceWithPlateNoTax : 0
-                            const cost = parseFloat(((watchedValues as any)?._quickCost || '0')) || 0
-                            const reg = parseFloat(registration || '0') || 0
-                            const ship = parseFloat(watchedValues.shipping || '0') || 0
-                            const plate = parseFloat(watchedValues.plateNumber || '0') || 0
-                            const other = parseFloat(watchedValues.otherAdditions || '0') || 0
-                            const supportPct = parseFloat(((watchedValues as any)?._supportPct || '0')) || 0
-                            const supportAmount = sale * 1.15 * (supportPct / 100)
-                            const expenses = reg + ship + plate + other + supportAmount
-                            const net = sale - cost - expenses
-                            const pct = sale > 0 ? (net / sale) : 0
-                            return (
-                              <>
-                                <div>
-                                  <label className="block text-sm font-semibold text-gray-800 mb-1">صافي الايراد (مبلغ)</label>
-                                  <input type="text" className="input bg-gray-100 cursor-not-allowed" value={`${Math.round(net).toLocaleString()} ريال`} disabled />
-                                </div>
-                                <div>
-                                  <label className="block text-sm font-semibold text-gray-800 mb-1">صافي الايراد (نسبة)</label>
-                                  <input type="text" className="input bg-gray-100 cursor-not-allowed" value={`${(pct * 100).toFixed(2)} %`} disabled />
-                                  <p className="mt-1 text-[11px] text-gray-600">المعادلة: (سعر البيع - سعر التكلفة - مصروفات البيع) ÷ سعر البيع</p>
-                                </div>
-                              </>
-                            )
-                          })()}
-                        </div>
-
-                        {/* حسبة الدعم (%) */}
-                        <div>
-                          <label className="block text-sm font-semibold text-gray-800 mb-1">حسبة الدعم (%)</label>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                            <input
-                              type="number"
-                              step="0.01"
-                              className="input"
-                              value={((watchedValues as any)?._supportPct || '')}
-                              onChange={(e) => setValue('_supportPct' as any, e.target.value)}
-                              placeholder="أدخل النسبة مثلاً 1 تعني 1%"
-                            />
-                            {(() => {
-                              const sale = installmentCarPrices ? installmentCarPrices.priceWithPlateNoTax : 0
-                              const supportPct = parseFloat(((watchedValues as any)?._supportPct || '0')) || 0
-                              const supportAmount = sale * 1.15 * (supportPct / 100)
-                              return (
-                                <input
-                                  type="text"
-                                  className="input bg-gray-100 cursor-not-allowed"
-                                  value={`قيمة الدعم: ${Math.round(supportAmount).toLocaleString()} ريال`}
-                                  disabled
-                                />
-                              )
-                            })()}
-                          </div>
-                          <p className="mt-1 text-[11px] text-gray-600">المعادلة: سعر البيع × 1.15 × (النسبة ÷ 100). تُضاف قيمة الدعم إلى مصروفات البيع</p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
                   {/* بيانات العميل الإضافية و الالتزامات */}
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                     {/* بيانات العميل الإضافية */}
@@ -1245,8 +1043,146 @@ export default function NewRequest() {
                     </div>
                   </div>
 
+                  {/* تفاصيل سعر السيارة + تحليل ايراد سريع */}
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                    {/* تفاصيل سعر السيارة */}
+                    <div className="border-2 border-green-200 rounded-lg p-4 bg-green-50">
+                      <h4 className="text-sm font-bold text-green-900 mb-3">🚗 تفاصيل سعر السيارة</h4>
+                      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            سعر السيارة الأساسي 🚙
+                          </label>
+                          <input
+                            {...register('carPrice')}
+                            type="number"
+                            step="0.01"
+                            className="input"
+                            placeholder="0.00"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            زيادة إضافية ➕
+                          </label>
+                          <input
+                            {...register('additionalFees')}
+                            type="number"
+                            step="0.01"
+                            className="input"
+                            placeholder="0.00"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            الشحن 🚚
+                          </label>
+                          <input
+                            {...register('shipping')}
+                            type="number"
+                            step="0.01"
+                            className="input"
+                            placeholder="0.00"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            التجيير 📄
+                          </label>
+                          <input
+                            {...register('registration')}
+                            type="number"
+                            step="0.01"
+                            className="input"
+                            placeholder="0.00"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            زيادة أخرى 📈
+                          </label>
+                          <input
+                            {...register('otherAdditions')}
+                            type="number"
+                            step="0.01"
+                            className="input"
+                            placeholder="0.00"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            اللوح 🏷️
+                          </label>
+                          <input
+                            {...register('plateNumber')}
+                            type="number"
+                            step="0.01"
+                            className="input"
+                            placeholder="0.00"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* تحليل ايراد سريع (لا يتم حفظه) */}
+                    <div className="border-2 border-yellow-300 rounded-lg p-4 bg-yellow-50">
+                      <h4 className="text-sm font-bold text-yellow-900 mb-3">💰 تحليل ايراد سريع</h4>
+                      {(() => {
+                        const car = parseFloat(watchedValues.carPrice || '0') || 0
+                        const add = parseFloat(watchedValues.additionalFees || '0') || 0
+                        const ship = parseFloat(watchedValues.shipping || '0') || 0
+                        const reg = parseFloat(watchedValues.registration || '0') || 0
+                        const other = parseFloat(watchedValues.otherAdditions || '0') || 0
+                        const plate = parseFloat(watchedValues.plateNumber || '0') || 0
+                        const priceWithPlateNoTax = (car + add + ship + reg + other) + plate
+                        const supportPct = parseFloat(((watchedValues as any)?._supportPct || '0')) || 0
+                        const supportAmount = priceWithPlateNoTax * 1.15 * (supportPct / 100)
+                        const expenses = reg + ship + plate + other + supportAmount
+                        const cost = parseFloat(((watchedValues as any)?._quickCost || '0')) || 0
+                        const net = priceWithPlateNoTax - cost - expenses
+                        const pct = priceWithPlateNoTax > 0 ? (net / priceWithPlateNoTax) * 100 : 0
+                        return (
+                          <div className="space-y-3">
+                            <div>
+                              <label className="block text-sm font-semibold text-gray-800 mb-1">سعر البيع (تلقائي)</label>
+                              <input className="input bg-gray-100" value={`${Math.round(priceWithPlateNoTax).toLocaleString()} ريال`} disabled />
+                            </div>
+                            <div>
+                              <label className="block text-sm font-semibold text-gray-800 mb-1">سعر التكلفة أو شراء السيارة</label>
+                              <input className="input" type="number" step="0.01" value={(watchedValues as any)?._quickCost || ''} onChange={(e)=>setValue('_quickCost' as any, e.target.value)} placeholder="0.00" />
+                            </div>
+                            <div>
+                              <label className="block text-sm font-semibold text-gray-800 mb-1">حسبة الدعم (%)</label>
+                              <input className="input" type="number" step="0.01" value={(watchedValues as any)?._supportPct || ''} onChange={(e)=>setValue('_supportPct' as any, e.target.value)} placeholder="أدخل النسبة" />
+                            </div>
+                            <div>
+                              <label className="block text-sm font-semibold text-gray-800 mb-1">مصروفات البيع (تلقائي)</label>
+                              <input className="input bg-gray-100" value={`${Math.round(expenses).toLocaleString()} ريال`} disabled />
+                              <p className="mt-1 text-[11px] text-gray-600">تشمل: التجيير + الشحن + اللوح + زيادة أخرى + حسبة الدعم</p>
+                            </div>
+                            <div className="grid grid-cols-2 gap-3">
+                              <div>
+                                <label className="block text-sm font-semibold text-gray-800 mb-1">صافي الايراد (مبلغ)</label>
+                                <input className="input bg-gray-100" value={`${Math.round(net).toLocaleString()} ريال`} disabled />
+                              </div>
+                              <div>
+                                <label className="block text-sm font-semibold text-gray-800 mb-1">صافي الايراد (نسبة)</label>
+                                <input className="input bg-gray-100" value={`${pct.toFixed(2)} %`} disabled />
+                              </div>
+                            </div>
+                          </div>
+                        )
+                      })()}
+                    </div>
+                  </div>
+
                   {/* معاملات التمويل */}
-                  <div className="border-2 border-purple-200 rounded-lg p-4 bg-purple-50">
+                  <div className="border-2 border-indigo-200 rounded-lg p-4 bg-indigo-50">
                     <h4 className="text-sm font-bold text-purple-900 mb-3">🏦 معاملات التمويل</h4>
                     
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
