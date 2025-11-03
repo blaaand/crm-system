@@ -1,6 +1,6 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useQuery, useMutation, useQueryClient } from 'react-query'
-import { PlusIcon, BanknotesIcon, /* PencilIcon, */ TrashIcon, CheckIcon } from '@heroicons/react/24/outline'
+import { PlusIcon, BanknotesIcon, /* PencilIcon, */ TrashIcon, CheckIcon, ChevronDownIcon } from '@heroicons/react/24/outline'
 import toast from 'react-hot-toast'
 import banksService, { Bank, /* BankRate, */ EmployerType } from '../services/banksService'
 import { useAuthStore } from '../stores/authStore'
@@ -31,6 +31,7 @@ export default function BanksFinancing() {
   const [notes, setNotes] = useState('')
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
   const queryClient = useQueryClient()
+  const ratesScrollRef = useRef<HTMLDivElement>(null)
 
   // Queries
   const { data: banks = [], isLoading } = useQuery('banks', banksService.getBanks)
@@ -261,8 +262,18 @@ export default function BanksFinancing() {
                   </div>
                 )}
               </div>
-              <div className="card-body overflow-y-auto">
-                {clientTypes.map((clientType) => (
+              <div className="card-body relative">
+                <button
+                  onClick={() => {
+                    ratesScrollRef.current?.scrollBy({ top: 300, behavior: 'smooth' })
+                  }}
+                  className="absolute right-1/2 top-4 transform translate-x-1/2 z-10 bg-primary-500 text-white rounded-full p-2 shadow-lg border border-primary-600 hover:bg-primary-600 transition-all"
+                  aria-label="Scroll down"
+                >
+                  <ChevronDownIcon className="h-6 w-6" />
+                </button>
+                <div ref={ratesScrollRef} className="overflow-y-auto max-h-[calc(100vh-400px)]">
+                  {clientTypes.map((clientType) => (
                   <div key={clientType.id} className="mb-8">
                     <div className="bg-gradient-to-r from-primary-50 to-primary-100 p-4 rounded-lg mb-4">
                       <h4 className="text-lg font-semibold text-gray-900">{clientType.name}</h4>
@@ -301,6 +312,7 @@ export default function BanksFinancing() {
                     </div>
                   </div>
                 ))}
+                </div>
               </div>
 
               {/* Bank Notes Section */}

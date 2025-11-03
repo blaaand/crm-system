@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useQuery, useMutation, useQueryClient } from 'react-query'
 import { Link } from 'react-router-dom'
 import {
@@ -15,7 +15,7 @@ import { Request, RequestStatus } from '../types'
 import KanbanColumn from '../components/KanbanColumn'
 import RequestCard from '../components/RequestCard'
 import MoveRequestModal from '../components/MoveRequestModal'
-import { PlusIcon, ViewColumnsIcon, ListBulletIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline'
+import { PlusIcon, ViewColumnsIcon, ListBulletIcon, MagnifyingGlassIcon, ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline'
 import * as XLSX from 'xlsx'
 
 const statusOrder: RequestStatus[] = [
@@ -37,6 +37,7 @@ export default function Requests() {
   const [selectedRequest, setSelectedRequest] = useState<Request | null>(null)
   const [targetStatus, setTargetStatus] = useState<RequestStatus | null>(null)
   const queryClient = useQueryClient()
+  const kanbanScrollRef = useRef<HTMLDivElement>(null)
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -262,36 +263,56 @@ export default function Requests() {
       </div>
 
       {viewMode === 'kanban' ? (
-        <DndContext
-          sensors={sensors}
-          onDragStart={handleDragStart}
-          onDragEnd={handleDragEnd}
-        >
-          <div className="flex gap-6 overflow-x-auto pb-8 pt-6 px-8 bg-gradient-to-br from-gray-50 to-gray-100 min-h-screen">
-            {statusOrder.map((status) => {
-              const column = kanbanData?.find((col) => col.status === status)
-              if (!column) return null
+        <div className="relative">
+          <button
+            onClick={() => {
+              kanbanScrollRef.current?.scrollBy({ left: -400, behavior: 'smooth' })
+            }}
+            className="absolute left-4 top-1/2 transform -translate-y-1/2 z-10 bg-white rounded-full p-2 shadow-lg border border-gray-300 hover:bg-gray-50 transition-all"
+            aria-label="Scroll left"
+          >
+            <ChevronLeftIcon className="h-6 w-6 text-gray-700" />
+          </button>
+          <button
+            onClick={() => {
+              kanbanScrollRef.current?.scrollBy({ left: 400, behavior: 'smooth' })
+            }}
+            className="absolute right-4 top-1/2 transform -translate-y-1/2 z-10 bg-white rounded-full p-2 shadow-lg border border-gray-300 hover:bg-gray-50 transition-all"
+            aria-label="Scroll right"
+          >
+            <ChevronRightIcon className="h-6 w-6 text-gray-700" />
+          </button>
+          <DndContext
+            sensors={sensors}
+            onDragStart={handleDragStart}
+            onDragEnd={handleDragEnd}
+          >
+            <div ref={kanbanScrollRef} className="flex gap-6 overflow-x-auto pb-8 pt-6 px-8 bg-gradient-to-br from-gray-50 to-gray-100 min-h-screen">
+              {statusOrder.map((status) => {
+                const column = kanbanData?.find((col) => col.status === status)
+                if (!column) return null
 
-              return (
-                <div key={status} className="flex-shrink-0 w-96">
-                  <KanbanColumn
-                    status={status}
-                    title={column.title}
-                    requests={column.requests.filter(filterReq)}
-                  />
+                return (
+                  <div key={status} className="flex-shrink-0 w-96">
+                    <KanbanColumn
+                      status={status}
+                      title={column.title}
+                      requests={column.requests.filter(filterReq)}
+                    />
+                  </div>
+                )
+              })}
+            </div>
+
+            <DragOverlay>
+              {activeRequest ? (
+                <div className="rotate-6 scale-110">
+                  <RequestCard request={activeRequest} isDragging />
                 </div>
-              )
-            })}
-          </div>
-
-          <DragOverlay>
-            {activeRequest ? (
-              <div className="rotate-6 scale-110">
-                <RequestCard request={activeRequest} isDragging />
-              </div>
-            ) : null}
-          </DragOverlay>
-        </DndContext>
+              ) : null}
+            </DragOverlay>
+          </DndContext>
+        </div>
       ) : (
         <div className="card">
           <div className="overflow-hidden">
