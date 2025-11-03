@@ -10,6 +10,7 @@ export default function Admin() {
   const isAdmin = hasAnyRole([UserRole.ADMIN])
   const [name, setName] = useState('')
   const [phone, setPhone] = useState('')
+  const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [role, setRole] = useState<'AGENT' | 'MANAGER' | 'ADMIN'>('AGENT')
   const [loading, setLoading] = useState(false)
@@ -29,10 +30,11 @@ export default function Admin() {
     }
     setLoading(true)
     try {
-      const res = await authService.adminCreateUser({ name, phone, password, role })
+      const res = await authService.adminCreateUser({ name, phone, email, password, role })
       toast.success(`تم إنشاء المستخدم: ${res.user.name}`)
       setName('')
       setPhone('')
+      setEmail('')
       setPassword('')
       setRole('AGENT')
       await loadUsers()
@@ -124,6 +126,10 @@ export default function Admin() {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">رقم الجوال</label>
                 <input className="input w-full" value={phone} onChange={(e)=>setPhone(e.target.value)} placeholder="مثال: 05xxxxxxxx" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">البريد الإلكتروني (اختياري)</label>
+                <input className="input w-full" type="email" value={email} onChange={(e)=>setEmail(e.target.value)} placeholder="مثال: user@example.com" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">كلمة المرور</label>

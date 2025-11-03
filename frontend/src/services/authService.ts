@@ -39,7 +39,7 @@ export const authService = {
     return response.data
   },
 
-  async adminCreateUser(data: { name: string; phone: string; password: string; role: 'ADMIN' | 'MANAGER' | 'AGENT' }): Promise<{ user: any }> {
+  async adminCreateUser(data: { name: string; phone: string; email?: string; password: string; role: 'ADMIN' | 'MANAGER' | 'AGENT' }): Promise<{ user: any }> {
     const response = await api.post('/admin/users', data)
     return response.data
   },

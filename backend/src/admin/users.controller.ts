@@ -1,6 +1,6 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags, ApiProperty } from '@nestjs/swagger';
-import { IsString, IsEnum, IsBoolean, IsOptional, MinLength } from 'class-validator';
+import { IsString, IsEnum, IsBoolean, IsOptional, MinLength, IsEmail } from 'class-validator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -16,6 +16,11 @@ class CreateEmployeeDto {
   @ApiProperty({ example: '0501234567' })
   @IsString()
   phone!: string;
+
+  @ApiProperty({ example: 'ahmed@example.com', required: false })
+  @IsOptional()
+  @IsEmail()
+  email?: string;
 
   @ApiProperty({ example: 'password123' })
   @IsString()
@@ -71,16 +76,16 @@ export class UsersAdminController {
   @ApiOperation({ summary: 'Create employee user (ADMIN only)' })
   @ApiResponse({ status: 201, description: 'User created' })
   async create(@Body() dto: CreateEmployeeDto) {
-    const { name, phone, password, role } = dto
+    const { name, phone, email, password, role } = dto
 
     const existingByPhone = await this.prisma.user.findFirst({ where: { phone } })
     if (existingByPhone) {
       throw new Error('المستخدم موجود بالفعل بهذا الجوال')
     }
 
-    // Generate email placeholder from phone to satisfy unique email constraint
-    const email = `${phone}@crm.local`
-    const existingByEmail = await this.prisma.user.findUnique({ where: { email } })
+    // Use provided email or generate email placeholder from phone to satisfy unique email constraint
+    const finalEmail = email || `${phone}@crm.local`
+    const existingByEmail = await this.prisma.user.findUnique({ where: { email: finalEmail } })
     if (existingByEmail) {
       throw new Error('هناك تعارض في البريد الإلكتروني')
     }
@@ -91,7 +96,7 @@ export class UsersAdminController {
       data: {
         name,
         phone,
-        email,
+        email: finalEmail,
         passwordHash,
         role,
         active: true,
