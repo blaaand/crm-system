@@ -84,6 +84,7 @@ model Request {
 model InstallmentDetails {
   id                     String   @id @default(uuid())
   requestId              String   @unique
+  carName                String?
   carPrice               Decimal?
   additionalFees         Decimal?
   shipping               Decimal?
@@ -94,6 +95,7 @@ model InstallmentDetails {
   salaryBankId           String?
   installmentBankId      String?
   salary                 Decimal?
+  workOrganization       String?
   obligationTypes        String?
   deductionPercentage    Float?
   obligation1            Decimal?
