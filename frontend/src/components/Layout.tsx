@@ -17,6 +17,7 @@ import {
   BanknotesIcon,
   CubeIcon,
   FolderIcon,
+  ArrowRightOnRectangleIcon,
 } from '@heroicons/react/24/outline'
 
 interface LayoutProps {
@@ -37,7 +38,7 @@ const navigation = [
 
 export default function Layout({ children }: LayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const { user, /* logout, */ hasAnyRole } = useAuthStore()
+  const { user, logout, hasAnyRole } = useAuthStore()
   const location = useLocation()
   
   // تحقق من المصادقة عند كل تنقل
@@ -106,8 +107,8 @@ export default function Layout({ children }: LayoutProps) {
               })}
             </nav>
           </div>
-          <div className="flex-shrink-0 flex border-t border-primary-500/30 p-4 bg-dark-200/50">
-            <div className="flex items-center w-full">
+          <div className="flex-shrink-0 border-t border-primary-500/30 p-4 bg-dark-200/50">
+            <div className="flex items-center w-full mb-3">
               <div className="flex-shrink-0">
                 <div className="h-11 w-11 rounded-full bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center shadow-xl border border-primary-400/30">
                   <UserCircleIcon className="h-7 w-7 text-dark-200" />
@@ -122,6 +123,16 @@ export default function Layout({ children }: LayoutProps) {
                 </p>
               </div>
             </div>
+            <button
+              onClick={() => {
+                setSidebarOpen(false)
+                logout()
+              }}
+              className="w-full flex items-center justify-center px-3 py-2 text-sm font-medium text-red-400 hover:text-red-300 hover:bg-red-900/20 rounded-lg transition-colors border border-red-500/30"
+            >
+              <ArrowRightOnRectangleIcon className="h-5 w-5 ml-2" />
+              تسجيل الخروج
+            </button>
           </div>
         </div>
       </div>
@@ -167,8 +178,8 @@ export default function Layout({ children }: LayoutProps) {
                 })}
               </nav>
             </div>
-            <div className="flex-shrink-0 flex border-t border-primary-500/30 p-5 bg-dark-200/50">
-              <div className="flex items-center w-full">
+            <div className="flex-shrink-0 border-t border-primary-500/30 p-5 bg-dark-200/50">
+              <div className="flex items-center w-full mb-3">
                 <div className="flex-shrink-0">
                   <div className="h-12 w-12 rounded-full bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center shadow-xl border border-primary-400/30">
                     <UserCircleIcon className="h-7 w-7 text-dark-200" />
@@ -183,6 +194,13 @@ export default function Layout({ children }: LayoutProps) {
                   </p>
                 </div>
               </div>
+              <button
+                onClick={logout}
+                className="w-full flex items-center justify-center px-3 py-2 text-sm font-medium text-red-400 hover:text-red-300 hover:bg-red-900/20 rounded-lg transition-colors border border-red-500/30"
+              >
+                <ArrowRightOnRectangleIcon className="h-5 w-5 ml-2" />
+                تسجيل الخروج
+              </button>
             </div>
           </div>
         </div>

@@ -416,194 +416,301 @@ export default function RequestDetails() {
                     تعديل
                   </Link>
                 </div>
-                <div className="card-body">
-                  {/* بيانات العميل الإضافية */}
-                  <div className="mb-6">
-                    <h4 className="text-sm font-bold text-gray-900 mb-3 border-b pb-2">📋 بيانات العميل الإضافية</h4>
-                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                      {request.installmentDetails.carName && (
-                        <div className="bg-blue-50 rounded-lg p-3 border border-blue-200">
-                          <p className="text-xs text-blue-600 mb-1">السيارة المطلوبة 🚗</p>
-                          <p className="text-lg font-bold text-blue-900">{request.installmentDetails.carName}</p>
-                        </div>
-                      )}
-                      
-                      {request.installmentDetails.workOrganization && (
-                        <div className="bg-purple-50 rounded-lg p-3 border border-purple-200">
-                          <p className="text-xs text-purple-600 mb-1">جهة العمل 💼</p>
-                          <p className="text-lg font-bold text-purple-900">
-                            {request.installmentDetails.workOrganization === 'COMPANY' && 'شركة'}
-                            {request.installmentDetails.workOrganization === 'PRIVATE_APPROVED' && 'خاص معتمد'}
-                            {request.installmentDetails.workOrganization === 'PRIVATE_UNAPPROVED' && 'خاص غير معتمد'}
-                            {request.installmentDetails.workOrganization === 'GOVERNMENT' && 'حكومي'}
-                            {request.installmentDetails.workOrganization === 'MILITARY' && 'عسكري'}
-                            {request.installmentDetails.workOrganization === 'RETIRED' && 'متقاعد'}
-                            {!['COMPANY', 'PRIVATE_APPROVED', 'PRIVATE_UNAPPROVED', 'GOVERNMENT', 'MILITARY', 'RETIRED'].includes(request.installmentDetails.workOrganization) && request.installmentDetails.workOrganization}
-                          </p>
-                        </div>
-                      )}
-                      
-                      {request.installmentDetails.age && (
-                        <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
-                          <p className="text-xs text-gray-500 mb-1">العمر 🎂</p>
-                          <p className="text-lg font-bold text-gray-900">{request.installmentDetails.age} سنة</p>
-                        </div>
-                      )}
-                      
-                      {request.installmentDetails.salary && (
-                        <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
-                          <p className="text-xs text-gray-500 mb-1">مبلغ الراتب 💰</p>
-                          <p className="text-lg font-bold text-gray-900">{Number(request.installmentDetails.salary).toLocaleString()} ريال</p>
-                        </div>
-                      )}
-
-                      {request.installmentDetails.salaryBank && (
-                        <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
-                          <p className="text-xs text-gray-500 mb-1">بنك الراتب 🏛️</p>
-                          <p className="text-lg font-bold text-gray-900">{request.installmentDetails.salaryBank.name}</p>
-                        </div>
-                      )}
-
-                      {request.installmentDetails.financingBank && (
-                        <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
-                          <p className="text-xs text-gray-500 mb-1">البنك المختار للتمويل 🏦</p>
-                          <p className="text-lg font-bold text-gray-900">{request.installmentDetails.financingBank.name}</p>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* الالتزامات */}
-                  {(request.installmentDetails.deductionPercentage || 
-                    request.installmentDetails.obligation1 || 
-                    request.installmentDetails.obligation2 || 
-                    request.installmentDetails.visaAmount) && (
-                    <div className="mb-6">
-                      <h4 className="text-sm font-bold text-gray-900 mb-3 border-b pb-2">📊 الالتزامات المالية</h4>
-                      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                        {request.installmentDetails.deductionPercentage && (
-                          <div className="bg-blue-50 rounded-lg p-3 border border-blue-200">
-                            <p className="text-xs text-blue-600 mb-1">نسبة الاستقطاع</p>
-                            <p className="text-lg font-bold text-blue-900">{request.installmentDetails.deductionPercentage}%</p>
+                <div className="card-body space-y-6">
+                  {/* صف 1: بيانات العميل + الالتزامات */}
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                    {/* بيانات العميل الإضافية */}
+                    <div className="border-2 border-purple-200 rounded-lg p-4 bg-purple-50">
+                      <h4 className="text-sm font-bold text-purple-900 mb-3">📋 بيانات العميل الإضافية</h4>
+                      <div className="space-y-3">
+                        {request.installmentDetails.carName && (
+                          <div>
+                            <p className="text-xs text-purple-600 mb-1">السيارة المطلوبة 🚗</p>
+                            <p className="text-base font-semibold text-purple-900">{request.installmentDetails.carName}</p>
+                          </div>
+                        )}
+                        
+                        {request.installmentDetails.workOrganization && (
+                          <div>
+                            <p className="text-xs text-purple-600 mb-1">جهة العمل 💼</p>
+                            <p className="text-base font-semibold text-purple-900">
+                              {request.installmentDetails.workOrganization === 'COMPANY' && 'شركة'}
+                              {request.installmentDetails.workOrganization === 'PRIVATE_APPROVED' && 'خاص معتمد'}
+                              {request.installmentDetails.workOrganization === 'PRIVATE_UNAPPROVED' && 'خاص غير معتمد'}
+                              {request.installmentDetails.workOrganization === 'GOVERNMENT' && 'حكومي'}
+                              {request.installmentDetails.workOrganization === 'MILITARY' && 'عسكري'}
+                              {request.installmentDetails.workOrganization === 'RETIRED' && 'متقاعد'}
+                              {!['COMPANY', 'PRIVATE_APPROVED', 'PRIVATE_UNAPPROVED', 'GOVERNMENT', 'MILITARY', 'RETIRED'].includes(request.installmentDetails.workOrganization) && request.installmentDetails.workOrganization}
+                            </p>
+                          </div>
+                        )}
+                        
+                        {request.installmentDetails.age && (
+                          <div>
+                            <p className="text-xs text-purple-600 mb-1">العمر 🎂</p>
+                            <p className="text-base font-semibold text-purple-900">{request.installmentDetails.age} سنة</p>
+                          </div>
+                        )}
+                        
+                        {request.installmentDetails.salary && (
+                          <div>
+                            <p className="text-xs text-purple-600 mb-1">مبلغ الراتب 💰</p>
+                            <p className="text-base font-semibold text-purple-900">{Number(request.installmentDetails.salary).toLocaleString()} ريال</p>
                           </div>
                         )}
 
-                        {request.installmentDetails.obligation1 && (
-                          <div className="bg-orange-50 rounded-lg p-3 border border-orange-200">
-                            <p className="text-xs text-orange-600 mb-1">التزام 1</p>
-                            <p className="text-lg font-bold text-orange-900">{Number(request.installmentDetails.obligation1).toLocaleString()} ريال</p>
+                        {request.installmentDetails.salaryBank && (
+                          <div>
+                            <p className="text-xs text-purple-600 mb-1">بنك الراتب 🏛️</p>
+                            <p className="text-base font-semibold text-purple-900">{request.installmentDetails.salaryBank.name}</p>
                           </div>
                         )}
 
-                        {request.installmentDetails.obligation2 && (
-                          <div className="bg-orange-50 rounded-lg p-3 border border-orange-200">
-                            <p className="text-xs text-orange-600 mb-1">التزام 2</p>
-                            <p className="text-lg font-bold text-orange-900">{Number(request.installmentDetails.obligation2).toLocaleString()} ريال</p>
-                          </div>
-                        )}
-
-                        {request.installmentDetails.visaAmount && (
-                          <div className="bg-red-50 rounded-lg p-3 border border-red-200">
-                            <p className="text-xs text-red-600 mb-1">الفيزا</p>
-                            <p className="text-lg font-bold text-red-900">{Number(request.installmentDetails.visaAmount).toLocaleString()} ريال</p>
-                          </div>
-                        )}
-
-                        {request.installmentDetails.deductedAmount && (
-                          <div className="bg-green-50 rounded-lg p-3 border border-green-200">
-                            <p className="text-xs text-green-600 mb-1">المبلغ المستقطع</p>
-                            <p className="text-lg font-bold text-green-900">{Number(request.installmentDetails.deductedAmount).toLocaleString()} ريال</p>
-                          </div>
-                        )}
-
-                        {request.installmentDetails.finalAmount && (
-                          <div className="bg-purple-50 rounded-lg p-3 border border-purple-200">
-                            <p className="text-xs text-purple-600 mb-1">المبلغ النهائي بعد الالتزامات</p>
-                            <p className="text-lg font-bold text-purple-900">{Number(request.installmentDetails.finalAmount).toLocaleString()} ريال</p>
+                        {request.installmentDetails.financingBank && (
+                          <div>
+                            <p className="text-xs text-purple-600 mb-1">البنك المختار للتمويل 🏦</p>
+                            <p className="text-base font-semibold text-purple-900">{request.installmentDetails.financingBank.name}</p>
                           </div>
                         )}
                       </div>
+                    </div>
+
+                    {/* الالتزامات */}
+                    {(request.installmentDetails.deductionPercentage || 
+                      request.installmentDetails.obligation1 || 
+                      request.installmentDetails.obligation2 || 
+                      request.installmentDetails.visaAmount ||
+                      request.installmentDetails.deductedAmount ||
+                      request.installmentDetails.finalAmount) && (
+                      <div className="border-2 border-orange-200 rounded-lg p-4 bg-orange-50">
+                        <h4 className="text-sm font-bold text-orange-900 mb-3">📊 الالتزامات</h4>
+                        <div className="space-y-3">
+                          {request.installmentDetails.deductionPercentage && (
+                            <div>
+                              <p className="text-xs text-orange-600 mb-1">نسبة الاستقطاع</p>
+                              <p className="text-base font-semibold text-orange-900">{request.installmentDetails.deductionPercentage}%</p>
+                            </div>
+                          )}
+
+                          {request.installmentDetails.obligation1 && (
+                            <div>
+                              <p className="text-xs text-orange-600 mb-1">التزام 1</p>
+                              <p className="text-base font-semibold text-orange-900">{Number(request.installmentDetails.obligation1).toLocaleString()} ريال</p>
+                            </div>
+                          )}
+
+                          {request.installmentDetails.obligation2 && (
+                            <div>
+                              <p className="text-xs text-orange-600 mb-1">التزام 2</p>
+                              <p className="text-base font-semibold text-orange-900">{Number(request.installmentDetails.obligation2).toLocaleString()} ريال</p>
+                            </div>
+                          )}
+
+                          {request.installmentDetails.visaAmount && (
+                            <div>
+                              <p className="text-xs text-orange-600 mb-1">الفيزا 💳</p>
+                              <p className="text-base font-semibold text-orange-900">{Number(request.installmentDetails.visaAmount).toLocaleString()} ريال</p>
+                            </div>
+                          )}
+
+                          {request.installmentDetails.deductedAmount && (
+                            <div>
+                              <p className="text-xs text-orange-600 mb-1">المبلغ المستقطع</p>
+                              <p className="text-base font-semibold text-orange-900">{Number(request.installmentDetails.deductedAmount).toLocaleString()} ريال</p>
+                            </div>
+                          )}
+
+                          {request.installmentDetails.finalAmount && (
+                            <div>
+                              <p className="text-xs text-orange-600 mb-1">المبلغ النهائي بعد الالتزامات</p>
+                              <p className="text-base font-semibold text-orange-900">{Number(request.installmentDetails.finalAmount).toLocaleString()} ريال</p>
+                            </div>
+                          )}
+                        </div>
+                        
+                        {/* المعادلات الحسابية */}
+                        {(request.installmentDetails.salary || request.installmentDetails.deductedAmount || request.installmentDetails.finalAmount) && (
+                          <div className="mt-4 bg-white rounded-lg p-3 border border-orange-300">
+                            <h5 className="text-xs font-bold text-orange-900 mb-2">🧮 المعادلات:</h5>
+                            <div className="space-y-1 text-xs text-gray-600">
+                              {request.installmentDetails.salary && request.installmentDetails.deductionPercentage && (
+                                <div className="flex justify-between items-center">
+                                  <span>الراتب × {request.installmentDetails.deductionPercentage}%:</span>
+                                  <span className="font-bold text-blue-600">{Number(request.installmentDetails.deductedAmount).toLocaleString()} ريال</span>
+                                </div>
+                              )}
+                              
+                              {(request.installmentDetails.obligation1 || request.installmentDetails.obligation2 || request.installmentDetails.visaAmount) && (
+                                <div className="flex justify-between items-center border-t pt-1">
+                                  <span>إجمالي الالتزامات:</span>
+                                  <span className="font-bold text-red-600">
+                                    {Math.round(Number(request.installmentDetails.obligation1 || 0) + Number(request.installmentDetails.obligation2 || 0) + Number(request.installmentDetails.visaAmount || 0) * 0.05).toLocaleString()} ريال
+                                  </span>
+                                </div>
+                              )}
+                              
+                              {request.installmentDetails.finalAmount && (
+                                <div className="flex justify-between items-center border-t pt-1">
+                                  <span>المبلغ المسموح:</span>
+                                  <span className="font-bold text-green-700">{Number(request.installmentDetails.finalAmount).toLocaleString()} ريال</span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* صف 2: تفاصيل سعر السيارة + تحليل ايراد سريع */}
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                    {/* تفاصيل سعر السيارة */}
+                    {(request.installmentDetails.carPrice || 
+                      request.installmentDetails.additionalFees || 
+                      request.installmentDetails.shipping ||
+                      request.installmentDetails.registration ||
+                      request.installmentDetails.otherAdditions ||
+                      request.installmentDetails.plateNumber) && (
+                      <div className="border-2 border-green-200 rounded-lg p-4 bg-green-50">
+                        <h4 className="text-sm font-bold text-green-900 mb-3">🚗 تفاصيل سعر السيارة</h4>
+                        <div className="space-y-2">
+                          {request.installmentDetails.carPrice && (
+                            <div className="flex justify-between items-center">
+                              <span className="text-xs text-green-700">سعر السيارة الأساسي</span>
+                              <span className="text-sm font-semibold text-green-900">{Number(request.installmentDetails.carPrice).toLocaleString()} ريال</span>
+                            </div>
+                          )}
+                          {request.installmentDetails.additionalFees && (
+                            <div className="flex justify-between items-center">
+                              <span className="text-xs text-green-700">زيادة إضافية</span>
+                              <span className="text-sm font-semibold text-green-900">{Number(request.installmentDetails.additionalFees).toLocaleString()} ريال</span>
+                            </div>
+                          )}
+                          {request.installmentDetails.shipping && (
+                            <div className="flex justify-between items-center">
+                              <span className="text-xs text-green-700">الشحن</span>
+                              <span className="text-sm font-semibold text-green-900">{Number(request.installmentDetails.shipping).toLocaleString()} ريال</span>
+                            </div>
+                          )}
+                          {request.installmentDetails.registration && (
+                            <div className="flex justify-between items-center">
+                              <span className="text-xs text-green-700">التجيير</span>
+                              <span className="text-sm font-semibold text-green-900">{Number(request.installmentDetails.registration).toLocaleString()} ريال</span>
+                            </div>
+                          )}
+                          {request.installmentDetails.otherAdditions && (
+                            <div className="flex justify-between items-center">
+                              <span className="text-xs text-green-700">زيادة أخرى</span>
+                              <span className="text-sm font-semibold text-green-900">{Number(request.installmentDetails.otherAdditions).toLocaleString()} ريال</span>
+                            </div>
+                          )}
+                          {request.installmentDetails.plateNumber && (
+                            <div className="flex justify-between items-center border-t pt-2">
+                              <span className="text-xs text-green-700 font-bold">اللوح</span>
+                              <span className="text-sm font-bold text-green-900">{Number(request.installmentDetails.plateNumber).toLocaleString()} ريال</span>
+                            </div>
+                          )}
+                          {(() => {
+                            const carPrice = Number(request.installmentDetails.carPrice || 0)
+                            const additionalFees = Number(request.installmentDetails.additionalFees || 0)
+                            const shipping = Number(request.installmentDetails.shipping || 0)
+                            const registration = Number(request.installmentDetails.registration || 0)
+                            const otherAdditions = Number(request.installmentDetails.otherAdditions || 0)
+                            const plateNumber = Number(request.installmentDetails.plateNumber || 0)
+                            const subtotal = carPrice + additionalFees + shipping + registration + otherAdditions
+                            const tax = subtotal * 0.15
+                            const totalWithTax = subtotal + tax
+                            const finalPriceWithTaxAndPlate = totalWithTax + plateNumber
+                            const priceWithPlateNoTax = subtotal + plateNumber
+                            return (
+                              <>
+                                <div className="flex justify-between items-center border-t pt-2">
+                                  <span className="text-xs text-green-700">الإجمالي بدون ضريبة</span>
+                                  <span className="text-sm font-semibold text-green-900">{priceWithPlateNoTax.toLocaleString()} ريال</span>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                  <span className="text-xs text-green-700">الضريبة 15%</span>
+                                  <span className="text-sm font-semibold text-green-900">{Math.round(tax).toLocaleString()} ريال</span>
+                                </div>
+                                <div className="flex justify-between items-center bg-green-100 px-2 py-1 rounded">
+                                  <span className="text-xs text-green-900 font-bold">الإجمالي النهائي</span>
+                                  <span className="text-sm font-bold text-green-900">{finalPriceWithTaxAndPlate.toLocaleString()} ريال</span>
+                                </div>
+                              </>
+                            )
+                          })()}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* تحليل ايراد سريع */}
+                    {(() => {
+                      const cf = request.customFields ? (typeof request.customFields === 'string' ? JSON.parse(request.customFields) : request.customFields) : {}
+                      const quickCost = cf?.quickCost || 0
+                      const supportPct = cf?.supportPct || 0
+                      const carPrice = Number(request.installmentDetails.carPrice || 0)
+                      const additionalFees = Number(request.installmentDetails.additionalFees || 0)
+                      const shipping = Number(request.installmentDetails.shipping || 0)
+                      const registration = Number(request.installmentDetails.registration || 0)
+                      const otherAdditions = Number(request.installmentDetails.otherAdditions || 0)
+                      const plateNumber = Number(request.installmentDetails.plateNumber || 0)
+                      const priceWithPlateNoTax = carPrice + additionalFees + shipping + registration + otherAdditions + plateNumber
+                      const supportAmount = priceWithPlateNoTax * 1.15 * (supportPct / 100)
+                      const expenses = registration + shipping + plateNumber + otherAdditions + supportAmount
+                      const net = priceWithPlateNoTax - quickCost - expenses
+                      const pct = priceWithPlateNoTax > 0 ? (net / priceWithPlateNoTax) * 100 : 0
                       
-                      {/* المعادلات الحسابية */}
-                      {(request.installmentDetails.salary || request.installmentDetails.deductedAmount || request.installmentDetails.finalAmount) && (
-                        <div className="mt-4 bg-gray-50 rounded-lg p-4 border border-gray-200">
-                          <h5 className="text-xs font-bold text-gray-700 mb-2">🧮 معادلات حساب الالتزامات:</h5>
-                          <div className="space-y-2 text-xs text-gray-600">
-                            {request.installmentDetails.salary && (
+                      if (priceWithPlateNoTax === 0) return null
+                      
+                      return (
+                        <div className="border-2 border-yellow-300 rounded-lg p-4 bg-yellow-50">
+                          <h4 className="text-sm font-bold text-yellow-900 mb-3">💰 تحليل ايراد سريع</h4>
+                          <div className="space-y-2">
+                            <div className="flex justify-between items-center">
+                              <span className="text-xs text-yellow-700">سعر البيع (تلقائي)</span>
+                              <span className="text-sm font-semibold text-yellow-900">{Math.round(priceWithPlateNoTax).toLocaleString()} ريال</span>
+                            </div>
+                            {quickCost > 0 && (
                               <div className="flex justify-between items-center">
-                                <span>💰 الراتب:</span>
-                                <span className="font-bold">{Number(request.installmentDetails.salary).toLocaleString()} ريال</span>
+                                <span className="text-xs text-yellow-700">سعر التكلفة</span>
+                                <span className="text-sm font-semibold text-yellow-900">{Number(quickCost).toLocaleString()} ريال</span>
                               </div>
                             )}
-                            
-                            {request.installmentDetails.salary && request.installmentDetails.deductionPercentage && (
-                              <div className="flex justify-between items-center">
-                                <span>📊 نسبة الاستقطاع ({request.installmentDetails.deductionPercentage}%):</span>
-                                <span className="font-bold">الراتب × {request.installmentDetails.deductionPercentage}%</span>
-                              </div>
-                            )}
-                            
-                            {(request.installmentDetails.obligation1 || request.installmentDetails.obligation2 || request.installmentDetails.visaAmount) && (
-                              <div className="flex justify-between items-center border-t pt-2">
-                                <span>📋 إجمالي الالتزامات:</span>
-                                <span className="font-bold">
-                                  {Math.round(Number(request.installmentDetails.obligation1 || 0) + Number(request.installmentDetails.obligation2 || 0) + Number(request.installmentDetails.visaAmount || 0) * 0.05)} ريال
-                                </span>
-                              </div>
-                            )}
-                            
-                            {request.installmentDetails.deductedAmount && (
-                              <div className="flex justify-between items-center border-t pt-2">
-                                <span>➖ المبلغ المستقطع:</span>
-                                <span className="font-bold text-green-700">{Number(request.installmentDetails.deductedAmount).toLocaleString()} ريال</span>
-                              </div>
-                            )}
-                            
-                            {request.installmentDetails.finalAmount && (
-                              <div className="flex justify-between items-center border-t pt-2">
-                                <span>✅ المبلغ النهائي المسموح:</span>
-                                <span className="font-bold text-purple-700">{Number(request.installmentDetails.finalAmount).toLocaleString()} ريال</span>
-                              </div>
+                            <div className="flex justify-between items-center">
+                              <span className="text-xs text-yellow-700">مصروفات البيع</span>
+                              <span className="text-sm font-semibold text-yellow-900">{Math.round(expenses).toLocaleString()} ريال</span>
+                            </div>
+                            {(quickCost > 0 || expenses > 0) && (
+                              <>
+                                <div className="flex justify-between items-center border-t pt-2">
+                                  <span className="text-xs text-yellow-700 font-bold">صافي الايراد (مبلغ)</span>
+                                  <span className="text-sm font-bold text-yellow-900">{Math.round(net).toLocaleString()} ريال</span>
+                                </div>
+                                <div className="flex justify-between items-center bg-yellow-100 px-2 py-1 rounded">
+                                  <span className="text-xs text-yellow-900 font-bold">صافي الايراد (نسبة)</span>
+                                  <span className="text-sm font-bold text-yellow-900">{pct.toFixed(2)}%</span>
+                                </div>
+                              </>
                             )}
                           </div>
                         </div>
-                      )}
-                    </div>
-                  )}
-
-                  {/* التأمين والخدمات */}
-                  <div className="mb-6">
-                    <h4 className="text-sm font-bold text-gray-900 mb-3 border-b pb-2">🛡️ التأمين والخدمات</h4>
-                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                      {request.installmentDetails.insurancePercentage && (
-                        <div className="bg-yellow-50 rounded-lg p-3 border border-yellow-200">
-                          <p className="text-xs text-yellow-600 mb-1">نسبة التأمين</p>
-                          <p className="text-lg font-bold text-yellow-900">{request.installmentDetails.insurancePercentage}%</p>
-                        </div>
-                      )}
-
-                      <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
-                        <p className="text-xs text-gray-500 mb-1">إيقاف الخدمات</p>
-                        <p className="text-lg font-bold text-gray-900">
-                          {request.installmentDetails.hasServiceStop ? '❌ نعم' : '✅ لا'}
-                        </p>
-                      </div>
-                    </div>
+                      )
+                    })()}
                   </div>
 
-                  {/* معاملات التمويل */}
+                  {/* صف 3: معاملات التمويل */}
                   {(request.installmentDetails.financingBankId || 
                     request.installmentDetails.downPaymentPercentage || 
                     request.installmentDetails.finalPaymentPercentage ||
                     request.installmentDetails.profitMargin ||
                     request.installmentDetails.installmentMonths) && (
-                    <div className="mb-6">
-                      <h4 className="text-sm font-bold text-gray-900 mb-3 border-b pb-2">🏦 معاملات التمويل</h4>
-                      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                    <div className="border-2 border-indigo-200 rounded-lg p-4 bg-indigo-50">
+                      <h4 className="text-sm font-bold text-indigo-900 mb-3">🏦 معاملات التمويل</h4>
+                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
                         {request.installmentDetails.financingBankId && (
-                          <div className="bg-indigo-50 rounded-lg p-3 border border-indigo-200">
+                          <div className="bg-white rounded-lg p-3 border border-indigo-200">
                             <p className="text-xs text-indigo-600 mb-1">البنك المختار للتمويل</p>
-                            <p className="text-lg font-bold text-indigo-900">
+                            <p className="text-base font-bold text-indigo-900">
                               {request.installmentDetails?.financingBankId === 'rajhi' 
                                 ? 'بنك الراجحي' 
                                 : banksData?.find(bank => bank.id === request.installmentDetails?.financingBankId)?.name || 'بنك غير محدد'}
@@ -612,30 +719,37 @@ export default function RequestDetails() {
                         )}
 
                         {request.installmentDetails.downPaymentPercentage && (
-                          <div className="bg-green-50 rounded-lg p-3 border border-green-200">
-                            <p className="text-xs text-green-600 mb-1">نسبة الدفعة الأولى</p>
-                            <p className="text-lg font-bold text-green-900">{request.installmentDetails.downPaymentPercentage}%</p>
+                          <div className="bg-white rounded-lg p-3 border border-indigo-200">
+                            <p className="text-xs text-indigo-600 mb-1">نسبة الدفعة الأولى</p>
+                            <p className="text-base font-bold text-indigo-900">{request.installmentDetails.downPaymentPercentage}%</p>
                           </div>
                         )}
 
                         {request.installmentDetails.finalPaymentPercentage && (
-                          <div className="bg-purple-50 rounded-lg p-3 border border-purple-200">
-                            <p className="text-xs text-purple-600 mb-1">نسبة الدفعة الأخيرة</p>
-                            <p className="text-lg font-bold text-purple-900">{request.installmentDetails.finalPaymentPercentage}%</p>
+                          <div className="bg-white rounded-lg p-3 border border-indigo-200">
+                            <p className="text-xs text-indigo-600 mb-1">نسبة الدفعة الأخيرة</p>
+                            <p className="text-base font-bold text-indigo-900">{request.installmentDetails.finalPaymentPercentage}%</p>
                           </div>
                         )}
 
                         {request.installmentDetails.profitMargin && (
-                          <div className="bg-red-50 rounded-lg p-3 border border-red-200">
-                            <p className="text-xs text-red-600 mb-1">هامش الربح السنوي</p>
-                            <p className="text-lg font-bold text-red-900">{request.installmentDetails.profitMargin}%</p>
+                          <div className="bg-white rounded-lg p-3 border border-indigo-200">
+                            <p className="text-xs text-indigo-600 mb-1">هامش الربح السنوي</p>
+                            <p className="text-base font-bold text-indigo-900">{request.installmentDetails.profitMargin}%</p>
                           </div>
                         )}
 
                         {request.installmentDetails.installmentMonths && (
-                          <div className="bg-blue-50 rounded-lg p-3 border border-blue-200">
-                            <p className="text-xs text-blue-600 mb-1">عدد أشهر التقسيط</p>
-                            <p className="text-lg font-bold text-blue-900">{request.installmentDetails.installmentMonths} شهر</p>
+                          <div className="bg-white rounded-lg p-3 border border-indigo-200">
+                            <p className="text-xs text-indigo-600 mb-1">عدد أشهر التقسيط</p>
+                            <p className="text-base font-bold text-indigo-900">{request.installmentDetails.installmentMonths} شهر</p>
+                          </div>
+                        )}
+
+                        {request.installmentDetails.insurancePercentage && (
+                          <div className="bg-white rounded-lg p-3 border border-indigo-200">
+                            <p className="text-xs text-indigo-600 mb-1">نسبة التأمين</p>
+                            <p className="text-base font-bold text-indigo-900">{request.installmentDetails.insurancePercentage}%</p>
                           </div>
                         )}
                       </div>
