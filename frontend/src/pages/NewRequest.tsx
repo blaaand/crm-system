@@ -118,7 +118,7 @@ export default function NewRequest() {
     additionalPrice,
     // carName,
     // additionalFees,
-    registration,
+    // registration,
     // otherAdditions,
     salary,
     salaryBankId,
