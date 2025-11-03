@@ -347,10 +347,7 @@ export default function EditRequest() {
     // 4. الدفعة الأخيرة
     const finalPayment = finalPaymentPct * carPriceWithTaxAndPlate
 
-    // 5. التأمين للسنة الواحدة
-    const annualInsurance = insurancePct * 1.15 * carPriceWithTaxAndPlate
-
-    // 6. التأمين على إجمالي السنوات (مع انخفاض قيمة السيارة 15% كل سنة)
+    // 5. التأمين على إجمالي السنوات (مع انخفاض قيمة السيارة 15% كل سنة)
     let totalInsuranceAllYears = 0
     let currentCarValue = carPriceWithTaxAndPlate
     const years = Math.ceil(installmentMonthsInt / 12)
