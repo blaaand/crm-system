@@ -16,12 +16,12 @@ async function bootstrap() {
 
   // Set global prefix
   app.setGlobalPrefix('api');
-  
+
   // Health check endpoint
   app.getHttpAdapter().get('/api/health', (req, res) => {
     res.status(200).json({ status: 'OK', message: 'Server is running' });
   });
-  
+
   // Enable CORS
   const allowedOrigins = process.env.CORS_ORIGIN 
     ? process.env.CORS_ORIGIN.split(',').map(o => o.trim())
@@ -48,17 +48,19 @@ async function bootstrap() {
     .setVersion('1.0')
     .addBearerAuth()
     .build();
-  
+
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api/docs', app, document, {
     customSiteTitle: 'CRM API Documentation',
   });
 
-  const port = process.env.PORT || 3000;
-  await app.listen(port);
-  
+  // Use consistent port
+  const port = process.env.PORT || 8080;
+  await app.listen(port, '0.0.0.0');
+
   console.log(`🚀 Application is running on: http://localhost:${port}`);
   console.log(`📚 API Documentation: http://localhost:${port}/api/docs`);
 }
 
 bootstrap();
+
