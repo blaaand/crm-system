@@ -218,9 +218,14 @@ export default function Layout({ children }: LayoutProps) {
           </button>
         </div>
         <main className="flex-1 relative overflow-y-auto focus:outline-none">
-          <div className="h-full">
-            <div className="h-full px-4 sm:px-6 lg:px-8 py-6">
+          <div className="h-full flex flex-col">
+            <div className="flex-1 px-4 sm:px-6 lg:px-8 py-6">
               {children}
+            </div>
+            <div className="border-t border-gray-200 bg-gray-50 px-4 sm:px-6 lg:px-8 py-3">
+              <div className="text-center text-xs text-gray-500">
+                Developed by <span className="font-semibold text-gray-700">Amar Alali</span>
+              </div>
             </div>
           </div>
         </main>
