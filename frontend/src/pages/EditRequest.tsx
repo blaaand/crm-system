@@ -823,24 +823,24 @@ export default function EditRequest() {
                       </div>
 
                       {/* الحسابات التلقائية للالتزامات */}
-                      {installmentAmounts && (installmentAmounts.deductedAmount > 0 || installmentAmounts.finalAmount !== 0) && (
+                      {calculateInstallmentAmounts && (calculateInstallmentAmounts.deductedAmount > 0 || calculateInstallmentAmounts.finalAmount !== 0) && (
                         <div className="mt-4 bg-white rounded-lg p-4 border-2 border-orange-300">
                           <h5 className="text-sm font-bold text-orange-900 mb-3">الحسابات التلقائية:</h5>
                           
                           <div className="space-y-2 text-sm">
                             <div className="flex justify-between py-2 border-b border-gray-200">
                               <span className="text-gray-700">المبلغ المستقطع (الراتب × النسبة):</span>
-                              <span className="font-bold text-blue-600">{installmentAmounts.deductedAmount.toLocaleString()} ريال</span>
+                              <span className="font-bold text-blue-600">{calculateInstallmentAmounts.deductedAmount.toLocaleString()} ريال</span>
                             </div>
                             
                             <div className="flex justify-between py-2 border-b border-gray-200">
                               <span className="text-gray-700">إجمالي الالتزامات + (الفيزا × 0.05):</span>
-                              <span className="font-bold text-red-600">{installmentAmounts.totalObligations.toLocaleString()} ريال</span>
+                              <span className="font-bold text-red-600">{calculateInstallmentAmounts.totalObligations.toLocaleString()} ريال</span>
                             </div>
                             
                             <div className="flex justify-between py-2 bg-green-100 px-2 rounded">
                               <span className="text-gray-900 font-bold">المبلغ المستقطع بعد خصم الالتزامات:</span>
-                              <span className="font-bold text-green-700 text-lg">{installmentAmounts.finalAmount.toLocaleString()} ريال</span>
+                              <span className="font-bold text-green-700 text-lg">{calculateInstallmentAmounts.finalAmount.toLocaleString()} ريال</span>
                             </div>
                           </div>
                         </div>
