@@ -59,6 +59,16 @@ const requestSchema = z.object({
 
 type RequestForm = z.infer<typeof requestSchema>
 
+// Helper function for PMT calculation
+function PMT(rate: number, nper: number, pv: number, fv: number, type: number = 0): number {
+  if (rate === 0) {
+    return -(pv + fv) / nper
+  }
+  const pvif = Math.pow(1 + rate, nper)
+  const pmt = rate / (pvif - 1) * -(pv * pvif + fv)
+  return type ? pmt / (1 + rate) : pmt
+}
+
 export default function EditRequest() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
@@ -368,16 +378,6 @@ export default function EditRequest() {
       totalInsurance: totalInsuranceAllYears
     }
   }, [calculateInstallmentCarPrices, isRajhiSelected, downPaymentPercentage, finalPaymentPercentage, profitMargin, installmentMonths, insurancePercentage])
-  
-  // Helper function for PMT calculation
-  function PMT(rate: number, nper: number, pv: number, fv: number, type: number = 0): number {
-    if (rate === 0) {
-      return -(pv + fv) / nper
-    }
-    const pvif = Math.pow(1 + rate, nper)
-    const pmt = rate / (pvif - 1) * -(pv * pvif + fv)
-    return type ? pmt / (1 + rate) : pmt
-  }
 
   // Check if monthly installment exceeds allowed amount
   const monthlyInstallment = rajhiFinancing ? rajhiFinancing.monthlyInstallment : generalFinancing ? generalFinancing.monthlyInstallment : 0
