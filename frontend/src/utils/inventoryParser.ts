@@ -4,24 +4,37 @@
  */
 
 // قائمة الشركات مع الاختلافات المحتملة في الكتابة
+// ترتيب مهم: الأطول أولاً لتجنب التطابق الخاطئ
+// ملاحظة: بيجاس تابعة لكيا، لذلك كيا يجب أن تكون قبل بيجو
 const COMPANY_PATTERNS: { [key: string]: string[] } = {
-  'جيتور': ['جيتور', 'geely', 'geetor', 'جيلي', 'جيتورا', 'جيتر', 'جيتورا', 'جيلي'],
+  // كيا أولاً (قبل بيجو) لأن بيجاس تابعة لكيا
+  'كيا': ['كيا', 'kia', 'بيجاس', 'pegas', 'pegasus', 'كيا بيجاس', 'كيا-بيجاس'],
+  'جيتور': ['جيتور', 'geely', 'geetor', 'جيلي', 'جيتورا', 'جيتر'],
   'هيونداي': ['هيونداي', 'هونداي', 'hyundai', 'هيوندا', 'هوندا', 'هيوند', 'هوند'],
-  'تويوتا': ['تويوتا', 'toyota', 'تويوتاه', 'تويوت', 'تويوتا', 'تويو'],
-  'نيسان': ['نيسان', 'nissan', 'نيسان', 'نيس', 'نيسا'],
-  'شيفروليه': ['شيفروليه', 'chevrolet', 'شيفروليه', 'شيفروليت', 'شيفرول', 'شيفر', 'شيف'],
-  'كيا': ['كيا', 'kia', 'كيا', 'كي'],
-  'هوندا': ['هوندا', 'honda', 'هوندا', 'هوند', 'هون'],
-  'فورد': ['فورد', 'ford', 'فورد', 'فور', 'فور'],
-  'مرسيدس': ['مرسيدس', 'mercedes', 'مرسيدس', 'مرسدس', 'مرس', 'مرسد'],
-  'بي إم دبليو': ['بي إم دبليو', 'bmw', 'بي ام دبليو', 'بي ام', 'b.m.w', 'بي ام دبليو'],
-  'أودي': ['أودي', 'audi', 'أودي', 'أود'],
-  'لكزس': ['لكزس', 'lexus', 'لكزس', 'لكز'],
-  'مازدا': ['مازدا', 'mazda', 'مازدا', 'ماز'],
-  'ميتسوبيشي': ['ميتسوبيشي', 'mitsubishi', 'ميتسوبيشي', 'ميتسوب', 'ميتسو'],
-  'سوزوكي': ['سوزوكي', 'suzuki', 'سوزوكي', 'سوزو'],
-  'رينو': ['رينو', 'renault', 'رينو', 'رين'],
-  'بيجو': ['بيجو', 'peugeot', 'بيجو', 'بيج'],
+  'تويوتا': ['تويوتا', 'toyota', 'تويوتاه', 'تويوت', 'تويو'],
+  'نيسان': ['نيسان', 'nissan', 'نيس', 'نيسا'],
+  'شيفروليه': ['شيفروليه', 'chevrolet', 'شيفروليت', 'شيفرول', 'شيفر', 'شيف'],
+  'هوندا': ['هوندا', 'honda', 'هوند', 'هون'],
+  'فورد': ['فورد', 'ford', 'فور'],
+  'مرسيدس': ['مرسيدس', 'mercedes', 'مرسدس', 'مرس', 'مرسد'],
+  'بي إم دبليو': ['بي إم دبليو', 'bmw', 'بي ام دبليو', 'بي ام', 'b.m.w'],
+  'أودي': ['أودي', 'audi', 'أود'],
+  'لكزس': ['لكزس', 'lexus', 'لكز'],
+  'مازدا': ['مازدا', 'mazda', 'ماز'],
+  'ميتسوبيشي': ['ميتسوبيشي', 'mitsubishi', 'ميتسوب', 'ميتسو'],
+  'سوزوكي': ['سوزوكي', 'suzuki', 'سوزو'],
+  'رينو': ['رينو', 'renault', 'رين'],
+  'بيجو': ['بيجو', 'peugeot'], // بيجو فقط (ليس بيجاس - بيجاس تابعة لكيا)
+  'جاك': ['جاك', 'jac', 'جاك'],
+  'شيري': ['شيري', 'chery', 'شيري'],
+  'جيلي': ['جيلي', 'geely'], // نفس جيتور لكن قد تكتب جيلي
+  'هافال': ['هافال', 'haval', 'هافال'],
+  'جي إم سي': ['جي إم سي', 'gmc', 'جي ام سي'],
+  'دودج': ['دودج', 'dodge', 'دودج'],
+  'جيب': ['جيب', 'jeep', 'جيب'],
+  'فولكس فاجن': ['فولكس فاجن', 'volkswagen', 'vw', 'فولكس', 'فاجن'],
+  'سكودا': ['سكودا', 'skoda', 'سكودا'],
+  'سيتروين': ['سيتروين', 'citroen', 'سيتروين'],
 }
 
 // قائمة الفئات الشائعة
@@ -70,16 +83,59 @@ function normalizeText(text: string): string {
 
 /**
  * Find company name from text
+ * Uses longest match first to avoid false positives
+ * Special handling: بيجاس is part of كيا, not بيجو
  */
 function extractCompany(text: string): string {
   if (!text) return ''
   
   const normalized = normalizeText(text)
   
-  // Search for company patterns
-  for (const [company, patterns] of Object.entries(COMPANY_PATTERNS)) {
+  // Special case: Check for بيجاس first (before بيجو) - بيجاس is part of كيا
+  const pegasPatterns = ['بيجاس', 'pegas', 'pegasus']
+  for (const pattern of pegasPatterns) {
+    const normalizedPattern = normalizeText(pattern)
+    if (normalized.includes(normalizedPattern)) {
+      return 'كيا' // بيجاس is part of كيا
+    }
+  }
+  
+  // Sort companies by pattern length (longest first) to avoid false matches
+  const sortedCompanies = Object.entries(COMPANY_PATTERNS).map(([company, patterns]) => {
+    const maxPatternLength = Math.max(...patterns.map(p => normalizeText(p).length))
+    return { company, patterns, maxLength: maxPatternLength }
+  }).sort((a, b) => b.maxLength - a.maxLength)
+  
+  // Search for company patterns (longest first)
+  for (const { company, patterns } of sortedCompanies) {
     for (const pattern of patterns) {
       const normalizedPattern = normalizeText(pattern)
+      
+      // Special handling for بيجو: must match exactly "peugeot" or "بيجو" (not بيج)
+      if (company === 'بيجو') {
+        // Only match full words: peugeot or بيجو (not partial matches)
+        if (normalizedPattern === 'peugeot' || normalizedPattern === 'بيجو') {
+          const exactMatch = normalized === normalizedPattern || 
+                            normalized.includes(' ' + normalizedPattern + ' ') ||
+                            normalized.startsWith(normalizedPattern + ' ') ||
+                            normalized.endsWith(' ' + normalizedPattern)
+          if (exactMatch) {
+            return company
+          }
+        }
+        continue // Skip other patterns for بيجو
+      }
+      
+      // Use word boundary matching when possible for better accuracy
+      if (normalizedPattern.length >= 3) {
+        // For longer patterns, check for whole word match
+        const escapedPattern = normalizedPattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+        const wordBoundaryRegex = new RegExp(`\\b${escapedPattern}\\b`, 'i')
+        if (wordBoundaryRegex.test(normalized)) {
+          return company
+        }
+      }
+      // Fallback to simple contains for short patterns
       if (normalized.includes(normalizedPattern)) {
         return company
       }
