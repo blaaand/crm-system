@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { useNavigate, Link, useSearchParams } from 'react-router-dom'
 import { useMutation, useQuery } from 'react-query'
 import { useForm, useWatch } from 'react-hook-form'
@@ -471,6 +471,111 @@ export default function NewRequest() {
     }
   }, [autoCalculatedRate, requestType, setValue])
 
+  // Load stored client data when client is selected
+  useEffect(() => {
+    if (selectedClient && requestType === 'INSTALLMENT') {
+      try {
+        // Load additional data
+        if (selectedClient.additionalData) {
+          const additionalData = JSON.parse(selectedClient.additionalData)
+          if (additionalData.carName) setValue('carName', additionalData.carName)
+          if (additionalData.workOrganization) setValue('workOrganization', additionalData.workOrganization)
+          if (additionalData.age) setValue('age', additionalData.age.toString())
+          if (additionalData.salaryBankId) setValue('salaryBankId', additionalData.salaryBankId)
+          if (additionalData.salary) setValue('salary', additionalData.salary.toString())
+          if (additionalData.insurancePercentage) setValue('insurancePercentage', additionalData.insurancePercentage.toString())
+          if (additionalData.hasServiceStop !== undefined) setValue('hasServiceStop', additionalData.hasServiceStop)
+        }
+
+        // Load commitments
+        if (selectedClient.commitments) {
+          const commitments = JSON.parse(selectedClient.commitments)
+          if (commitments.obligationTypes) setValue('obligationTypes', commitments.obligationTypes)
+          if (commitments.deductionPercentage) setValue('deductionPercentage', commitments.deductionPercentage.toString())
+          if (commitments.obligation1) setValue('obligation1', commitments.obligation1.toString())
+          if (commitments.obligation2) setValue('obligation2', commitments.obligation2.toString())
+          if (commitments.visaAmount) setValue('visaAmount', commitments.visaAmount.toString())
+        }
+      } catch (error) {
+        console.error('Error loading client data:', error)
+      }
+    }
+  }, [selectedClient?.id, requestType, setValue])
+
+  // Auto-save additional data and commitments with debouncing
+  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  
+  useEffect(() => {
+    if (!selectedClient || requestType !== 'INSTALLMENT') return
+
+    // Clear existing timeout
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current)
+    }
+
+    // Set new timeout to save after 1 second of no changes
+    saveTimeoutRef.current = setTimeout(async () => {
+      try {
+        const additionalData = {
+          carName: watchedValues.carName || '',
+          workOrganization: watchedValues.workOrganization || '',
+          age: watchedValues.age ? parseInt(watchedValues.age) : undefined,
+          salaryBankId: watchedValues.salaryBankId || '',
+          salary: watchedValues.salary ? parseFloat(watchedValues.salary) : undefined,
+          insurancePercentage: watchedValues.insurancePercentage ? parseFloat(watchedValues.insurancePercentage) : undefined,
+          hasServiceStop: watchedValues.hasServiceStop || false,
+        }
+
+        const commitments = {
+          obligationTypes: watchedValues.obligationTypes || [],
+          deductionPercentage: watchedValues.deductionPercentage ? parseFloat(watchedValues.deductionPercentage) : undefined,
+          obligation1: watchedValues.obligation1 ? parseFloat(watchedValues.obligation1) : undefined,
+          obligation2: watchedValues.obligation2 ? parseFloat(watchedValues.obligation2) : undefined,
+          visaAmount: watchedValues.visaAmount ? parseFloat(watchedValues.visaAmount) : undefined,
+        }
+
+        // Check if there's any data to save
+        const hasAdditionalData = Object.values(additionalData).some(v => v !== '' && v !== undefined && v !== false)
+        const hasCommitments = Object.values(commitments).some(v => {
+          if (Array.isArray(v)) return v.length > 0
+          return v !== '' && v !== undefined
+        })
+
+        if (hasAdditionalData || hasCommitments) {
+          await clientsService.updateClient(selectedClient.id, {
+            additionalData: hasAdditionalData ? JSON.stringify(additionalData) : undefined,
+            commitments: hasCommitments ? JSON.stringify(commitments) : undefined,
+          })
+          // Silently save - no toast to avoid annoying user
+        }
+      } catch (error) {
+        console.error('Error auto-saving client data:', error)
+      }
+    }, 1000) // Wait 1 second after last change
+
+    // Cleanup function
+    return () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current)
+      }
+    }
+  }, [
+    watchedValues.carName,
+    watchedValues.workOrganization,
+    watchedValues.age,
+    watchedValues.salaryBankId,
+    watchedValues.salary,
+    watchedValues.insurancePercentage,
+    watchedValues.hasServiceStop,
+    watchedValues.obligationTypes,
+    watchedValues.deductionPercentage,
+    watchedValues.obligation1,
+    watchedValues.obligation2,
+    watchedValues.visaAmount,
+    selectedClient?.id,
+    requestType,
+  ])
+
   const createRequestMutation = useMutation(
     (data: RequestForm) => {
       console.log('Creating request with data:', data)
@@ -689,14 +794,21 @@ export default function NewRequest() {
                     <p className="text-sm text-gray-700">
                       <strong>الهاتف:</strong> {selectedClient.phonePrimary}
                     </p>
-                    {selectedClient.city && (
-                      <p className="text-sm text-gray-700">
-                        <strong>المدينة:</strong> {selectedClient.city}
-                      </p>
-                    )}
                   </div>
                 )}
               </div>
+
+              {/* المدينة - أعلى نوع الطلب */}
+              {selectedClient && selectedClient.city && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    المدينة
+                  </label>
+                  <div className="input bg-gray-100 cursor-not-allowed">
+                    {selectedClient.city}
+                  </div>
+                </div>
+              )}
 
               {/* نوع الطلب */}
               <div>

@@ -44,4 +44,14 @@ export class CreateClientDto {
   @IsOptional()
   @IsString()
   notes?: string;
+
+  @ApiProperty({ required: false, description: 'JSON string for storing additional client data' })
+  @IsOptional()
+  @IsString()
+  additionalData?: string;
+
+  @ApiProperty({ required: false, description: 'JSON string for storing client commitments' })
+  @IsOptional()
+  @IsString()
+  commitments?: string;
 }

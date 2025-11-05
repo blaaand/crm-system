@@ -44,6 +44,8 @@ model Client {
   address        String?
   source         String?
   notes          String?
+  additionalData String?     // JSON string for storing additional client data
+  commitments    String?      // JSON string for storing client commitments
   createdById    String
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt

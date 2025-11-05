@@ -58,6 +58,8 @@ export interface Client {
   address?: string
   source?: string
   notes?: string
+  additionalData?: string // JSON string for storing additional client data
+  commitments?: string // JSON string for storing client commitments
   createdById: string
   createdAt: string
   updatedAt: string
