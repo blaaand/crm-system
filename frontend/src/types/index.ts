@@ -249,6 +249,8 @@ export interface CreateClientRequest {
   address?: string
   source?: string
   notes?: string
+  additionalData?: string // JSON string for storing additional client data
+  commitments?: string // JSON string for storing client commitments
 }
 
 export interface CreateRequestRequest {

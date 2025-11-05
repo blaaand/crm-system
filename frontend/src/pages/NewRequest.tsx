@@ -503,7 +503,7 @@ export default function NewRequest() {
   }, [selectedClient?.id, requestType, setValue])
 
   // Auto-save additional data and commitments with debouncing
-  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   
   useEffect(() => {
     if (!selectedClient || requestType !== 'INSTALLMENT') return
@@ -535,10 +535,17 @@ export default function NewRequest() {
         }
 
         // Check if there's any data to save
-        const hasAdditionalData = Object.values(additionalData).some(v => v !== '' && v !== undefined && v !== false)
+        const hasAdditionalData = Object.values(additionalData).some(v => {
+          if (typeof v === 'string') return v !== ''
+          if (typeof v === 'number') return v !== 0
+          if (typeof v === 'boolean') return v !== false
+          return v !== undefined && v !== null
+        })
         const hasCommitments = Object.values(commitments).some(v => {
           if (Array.isArray(v)) return v.length > 0
-          return v !== '' && v !== undefined
+          if (typeof v === 'string') return v !== ''
+          if (typeof v === 'number') return v !== 0
+          return v !== undefined && v !== null
         })
 
         if (hasAdditionalData || hasCommitments) {

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { CalculatorIcon, XMarkIcon, TrashIcon } from '@heroicons/react/24/outline'
 import banksService from '../services/banksService'
 import { useQuery } from 'react-query'
