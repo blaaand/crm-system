@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom'
 import { useAuthStore } from '../stores/authStore'
 import { useAuthGuard } from '../hooks/useAuthGuard'
 import { UserRole } from '../types'
+import FloatingCalculator from './FloatingCalculator'
 import {
   HomeIcon,
   UsersIcon,
@@ -43,6 +44,9 @@ export default function Layout({ children }: LayoutProps) {
   
   // تحقق من المصادقة عند كل تنقل
   useAuthGuard()
+
+  // Show calculator on all pages except login
+  const showCalculator = location.pathname !== '/login'
 
   const filteredNavigation = navigation.filter((item) => {
     // Admin-only sections
@@ -230,6 +234,9 @@ export default function Layout({ children }: LayoutProps) {
           </div>
         </main>
       </div>
+      
+      {/* Floating Calculator - visible on all pages except login */}
+      {showCalculator && <FloatingCalculator />}
     </div>
   )
 }
