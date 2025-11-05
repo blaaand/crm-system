@@ -2,12 +2,23 @@ import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
+import { PrismaService } from './common/prisma/prisma.service';
+import { migrateClientFields } from './common/migrate-client-fields';
 import * as express from 'express';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
     bodyParser: false, // Disable default body parser to set custom limit
   });
+
+  // Apply database migrations for new fields
+  try {
+    const prisma = app.get(PrismaService);
+    await migrateClientFields(prisma);
+  } catch (error) {
+    console.error('⚠️ Error applying migrations:', error);
+    // Continue anyway - fields might already exist
+  }
 
   // Increase body size limit for large inventory files (50MB)
   const expressApp = app.getHttpAdapter().getInstance();
