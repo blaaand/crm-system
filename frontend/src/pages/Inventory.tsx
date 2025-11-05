@@ -5,6 +5,7 @@ import { useAuthStore } from '../stores/authStore'
 import { inventoryService } from '../services/inventoryService'
 import toast from 'react-hot-toast'
 import { UserRole } from '../types'
+import { processInventoryData } from '../utils/inventoryParser'
 
 // interface InventoryItem {
 //   groupName: string
@@ -39,6 +40,8 @@ export default function Inventory() {
   const [searchTerm, setSearchTerm] = useState('')
   const [filterColor, setFilterColor] = useState('')
   const [filterStatus, setFilterStatus] = useState('')
+  const [filterCompany, setFilterCompany] = useState('')
+  const [filterCategory, setFilterCategory] = useState('')
   const [isSaving, setIsSaving] = useState(false)
   const [uploadedBy, setUploadedBy] = useState<string>('')
   const [loadingInventory, setLoadingInventory] = useState(true)
@@ -132,14 +135,24 @@ export default function Inventory() {
     if (!canEdit) return
     setIsSaving(true)
     try {
-      const result = await inventoryService.saveInventory(headers, inventoryData)
+      // Process inventory data to add company and category columns
+      // This is done once when saving, not on every page load
+      const processed = processInventoryData(headers, inventoryData)
+      
+      const result = await inventoryService.saveInventory(processed.headers, processed.data)
+      
+      // Update local state with processed data
+      setHeaders(processed.headers)
+      setInventoryData(processed.data)
+      
       // Also save to localStorage for backward compatibility
-      localStorage.setItem('inventoryHeaders', JSON.stringify(headers))
-      localStorage.setItem('inventoryData', JSON.stringify(inventoryData))
+      localStorage.setItem('inventoryHeaders', JSON.stringify(processed.headers))
+      localStorage.setItem('inventoryData', JSON.stringify(processed.data))
+      
       if (result.inventory?.uploadedBy) {
         setUploadedBy(result.inventory.uploadedBy)
       }
-      toast.success(`تم حفظ ${inventoryData.length} سيارة في المخزون بنجاح!`)
+      toast.success(`تم حفظ ${processed.data.length} سيارة في المخزون بنجاح!`)
     } catch (error: any) {
       toast.error(error?.response?.data?.message || 'حدث خطأ أثناء حفظ المخزون')
     } finally {
@@ -191,16 +204,41 @@ export default function Inventory() {
     const matchesSearch = text.includes(searchTerm.toLowerCase())
     const matchesColor = !filterColor || headers.some(h => h.includes('لون') && row[h] === filterColor)
     const matchesStatus = !filterStatus || headers.some(h => h.includes('حالة') && row[h] === filterStatus)
-    return matchesSearch && matchesColor && matchesStatus
+    
+    // Filter by company
+    const companyHeader = headers.find(h => h === 'الشركة' || h.includes('شركة'))
+    const matchesCompany = !filterCompany || (companyHeader && row[companyHeader] === filterCompany)
+    
+    // Filter by category (only if company is selected)
+    const categoryHeader = headers.find(h => h === 'الفئة' || h.includes('فئة'))
+    const matchesCategory = !filterCategory || (categoryHeader && row[categoryHeader] === filterCategory)
+    
+    return matchesSearch && matchesColor && matchesStatus && matchesCompany && matchesCategory
   })
 
   // Reset selection when filters change
   useEffect(() => {
     setSelectedItems(new Set())
-  }, [searchTerm, filterColor, filterStatus])
+  }, [searchTerm, filterColor, filterStatus, filterCompany, filterCategory])
+  
+  // Reset category filter when company changes
+  useEffect(() => {
+    setFilterCategory('')
+  }, [filterCompany])
 
   const uniqueColors = Array.from(new Set(inventoryData.flatMap(row => headers.filter(h=>h.includes('لون')).map(h => row[h])))).filter(Boolean) as string[]
   const uniqueStatuses = Array.from(new Set(inventoryData.flatMap(row => headers.filter(h=>h.includes('حالة')).map(h => row[h])))).filter(Boolean) as string[]
+  
+  // Get unique companies and categories
+  const companyHeader = headers.find(h => h === 'الشركة' || h.includes('شركة'))
+  const categoryHeader = headers.find(h => h === 'الفئة' || h.includes('فئة'))
+  const uniqueCompanies = Array.from(new Set(inventoryData.map(row => companyHeader ? row[companyHeader] : '').filter(Boolean))).sort() as string[]
+  const uniqueCategories = Array.from(new Set(
+    inventoryData
+      .filter(row => !filterCompany || (companyHeader && row[companyHeader] === filterCompany))
+      .map(row => categoryHeader ? row[categoryHeader] : '')
+      .filter(Boolean)
+  )).sort() as string[]
 
   // Handle item selection
   const toggleItemSelection = (index: number) => {
@@ -326,7 +364,7 @@ export default function Inventory() {
       {inventoryData.length > 0 && (
         <div className="card mb-6">
           <div className="card-body">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-4">
               <div className="relative">
                 <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
                   <MagnifyingGlassIcon className="h-5 w-5 text-gray-400" />
@@ -339,6 +377,34 @@ export default function Inventory() {
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
               </div>
+              
+              {/* Company Filter */}
+              {companyHeader && (
+                <select
+                  className="input"
+                  value={filterCompany}
+                  onChange={(e) => setFilterCompany(e.target.value)}
+                >
+                  <option value="">جميع الشركات</option>
+                  {uniqueCompanies.map((company) => (
+                    <option key={company} value={company}>{company}</option>
+                  ))}
+                </select>
+              )}
+              
+              {/* Category Filter - only shown if company is selected */}
+              {categoryHeader && filterCompany && (
+                <select
+                  className="input"
+                  value={filterCategory}
+                  onChange={(e) => setFilterCategory(e.target.value)}
+                >
+                  <option value="">جميع الفئات</option>
+                  {uniqueCategories.map((category) => (
+                    <option key={category} value={category}>{category}</option>
+                  ))}
+                </select>
+              )}
               
               <select
                 className="input"
