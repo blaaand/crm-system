@@ -5,7 +5,7 @@ import { useAuthStore } from '../stores/authStore'
 import { inventoryService } from '../services/inventoryService'
 import toast from 'react-hot-toast'
 import { UserRole } from '../types'
-import { processInventoryData } from '../utils/inventoryParser'
+// import { processInventoryData } from '../utils/inventoryParser' // Disabled - manual entry only
 
 // interface InventoryItem {
 //   groupName: string
@@ -135,24 +135,41 @@ export default function Inventory() {
     if (!canEdit) return
     setIsSaving(true)
     try {
-      // Process inventory data to add company and category columns
-      // This is done once when saving, not on every page load
-      const processed = processInventoryData(headers, inventoryData)
+      // Add company and category columns if they don't exist (empty - manual entry)
+      const newHeaders = [...headers]
+      const newData = [...inventoryData]
       
-      const result = await inventoryService.saveInventory(processed.headers, processed.data)
+      const hasCompany = headers.some(h => h === 'الشركة' || h.includes('شركة'))
+      const hasCategory = headers.some(h => h === 'الفئة' || h.includes('فئة'))
       
-      // Update local state with processed data
-      setHeaders(processed.headers)
-      setInventoryData(processed.data)
+      if (!hasCompany) {
+        newHeaders.push('الشركة')
+        newData.forEach(row => {
+          row['الشركة'] = row['الشركة'] || ''
+        })
+      }
+      
+      if (!hasCategory) {
+        newHeaders.push('الفئة')
+        newData.forEach(row => {
+          row['الفئة'] = row['الفئة'] || ''
+        })
+      }
+      
+      const result = await inventoryService.saveInventory(newHeaders, newData)
+      
+      // Update local state
+      setHeaders(newHeaders)
+      setInventoryData(newData)
       
       // Also save to localStorage for backward compatibility
-      localStorage.setItem('inventoryHeaders', JSON.stringify(processed.headers))
-      localStorage.setItem('inventoryData', JSON.stringify(processed.data))
+      localStorage.setItem('inventoryHeaders', JSON.stringify(newHeaders))
+      localStorage.setItem('inventoryData', JSON.stringify(newData))
       
       if (result.inventory?.uploadedBy) {
         setUploadedBy(result.inventory.uploadedBy)
       }
-      toast.success(`تم حفظ ${processed.data.length} سيارة في المخزون بنجاح!`)
+      toast.success(`تم حفظ ${newData.length} سيارة في المخزون بنجاح!`)
     } catch (error: any) {
       toast.error(error?.response?.data?.message || 'حدث خطأ أثناء حفظ المخزون')
     } finally {
