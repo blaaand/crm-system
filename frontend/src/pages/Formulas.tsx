@@ -1,17 +1,5 @@
 import { useState, useEffect } from 'react'
 import { CalculatorIcon, XMarkIcon, TrashIcon } from '@heroicons/react/24/outline'
-import banksService from '../services/banksService'
-import { useQuery } from 'react-query'
-
-// أنواع جهة العمل
-const workOrganizationOptions = [
-  { value: 'PRIVATE_APPROVED', label: 'خاص معتمد' },
-  { value: 'PRIVATE_UNAPPROVED', label: 'خاص غير معتمد' },
-  { value: 'COMPANY', label: 'شركة' },
-  { value: 'GOVERNMENT', label: 'حكومي' },
-  { value: 'MILITARY', label: 'عسكري' },
-  { value: 'RETIRED', label: 'متقاعد' },
-]
 
 // أنواع الالتزامات
 const obligationTypeOptions = [
@@ -43,6 +31,8 @@ interface CalculatorState {
   taxRemovalPrice: string
 }
 
+const DEFAULT_DEDUCTION_PERCENTAGE = '45'
+
 export default function Formulas() {
   const [isCalculatorOpen, setIsCalculatorOpen] = useState(false)
   const [calculatorType, setCalculatorType] = useState<CalculatorType>(null)
@@ -57,14 +47,13 @@ export default function Formulas() {
     commitmentsWorkOrganization: '',
     commitmentsAge: '',
     commitmentsObligationTypes: [],
-    commitmentsDeductionPercentage: '',
+    commitmentsDeductionPercentage: DEFAULT_DEDUCTION_PERCENTAGE,
     commitmentsObligation1: '',
     commitmentsObligation2: '',
     commitmentsVisaAmount: '',
     taxRemovalPrice: '',
   })
 
-  const { data: banksData } = useQuery('banks', banksService.getBanks)
 
   // Calculate cash prices
   const calculateCashPrices = () => {
@@ -119,6 +108,16 @@ export default function Formulas() {
       taxAmount,
     }
   }
+
+  // Set default deduction percentage when opening commitments calculator
+  useEffect(() => {
+    if (calculatorType === 'COMMITMENTS' && (calculatorState.commitmentsDeductionPercentage === '' || calculatorState.commitmentsDeductionPercentage === '0')) {
+      setCalculatorState(prev => ({
+        ...prev,
+        commitmentsDeductionPercentage: DEFAULT_DEDUCTION_PERCENTAGE
+      }))
+    }
+  }, [calculatorType, calculatorState.commitmentsDeductionPercentage])
 
   // Auto-calculate deduction percentage based on obligation types
   useEffect(() => {
@@ -185,7 +184,7 @@ export default function Formulas() {
       commitmentsWorkOrganization: '',
       commitmentsAge: '',
       commitmentsObligationTypes: [],
-      commitmentsDeductionPercentage: '',
+      commitmentsDeductionPercentage: DEFAULT_DEDUCTION_PERCENTAGE,
       commitmentsObligation1: '',
       commitmentsObligation2: '',
       commitmentsVisaAmount: '',
@@ -422,42 +421,7 @@ export default function Formulas() {
                         placeholder="0.00"
                       />
                     </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">البنك الذي ينزل عليه الراتب</label>
-                      <select
-                        value={calculatorState.commitmentsSalaryBankId}
-                        onChange={(e) => setCalculatorState(prev => ({ ...prev, commitmentsSalaryBankId: e.target.value }))}
-                        className="input"
-                      >
-                        <option value="">اختر البنك</option>
-                        {banksData?.map((bank) => (
-                          <option key={bank.id} value={bank.id}>{bank.name}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">جهة العمل</label>
-                      <select
-                        value={calculatorState.commitmentsWorkOrganization}
-                        onChange={(e) => setCalculatorState(prev => ({ ...prev, commitmentsWorkOrganization: e.target.value }))}
-                        className="input"
-                      >
-                        <option value="">اختر جهة العمل</option>
-                        {workOrganizationOptions.map((option) => (
-                          <option key={option.value} value={option.value}>{option.label}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">العمر</label>
-                      <input
-                        type="number"
-                        value={calculatorState.commitmentsAge}
-                        onChange={(e) => setCalculatorState(prev => ({ ...prev, commitmentsAge: e.target.value }))}
-                        className="input"
-                        placeholder="مثال: 35"
-                      />
-                    </div>
+                    {/* Hidden fields: البنك، جهة العمل، العمر - hidden in formulas page only */}
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">نوع الالتزام (يمكن اختيار أكثر من خيار)</label>
                       <div className="flex gap-4 flex-wrap">
@@ -484,7 +448,7 @@ export default function Formulas() {
                         value={calculatorState.commitmentsDeductionPercentage}
                         onChange={(e) => setCalculatorState(prev => ({ ...prev, commitmentsDeductionPercentage: e.target.value }))}
                         className="input"
-                        placeholder="مثال: 33.5"
+                        placeholder="45"
                       />
                     </div>
                     <div>
