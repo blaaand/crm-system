@@ -92,7 +92,7 @@ export class ClientsController {
   }
 
   @Delete(':id')
-  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.AGENT)
   @ApiOperation({ summary: 'حذف العميل' })
   @ApiResponse({ status: 200, description: 'تم حذف العميل بنجاح' })
   @ApiResponse({ status: 404, description: 'العميل غير موجود' })

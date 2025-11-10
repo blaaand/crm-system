@@ -232,6 +232,9 @@ export default function Clients() {
           <span className="text-xs text-gray-500">{new Date(client.updatedAt).toLocaleDateString('ar-SA', { calendar: 'gregory' })}</span>
         </div>
         <div className="text-sm text-gray-700" dir="ltr">{client.phonePrimary}</div>
+        <div className="mt-1 text-xs text-gray-500">
+          تم الإنشاء بواسطة: <span className="font-medium text-gray-700">{client.createdBy?.name || 'غير محدد'}</span>
+        </div>
         <div className="flex justify-end mt-2">
           <Link to={`/clients/${client.id}`} className="text-primary-600 text-xs">عرض التفاصيل</Link>
         </div>

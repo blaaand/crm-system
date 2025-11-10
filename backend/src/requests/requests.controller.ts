@@ -103,7 +103,7 @@ export class RequestsController {
   }
 
   @Delete(':id')
-  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.AGENT)
   @ApiOperation({ summary: 'حذف الطلب' })
   @ApiResponse({ status: 200, description: 'تم حذف الطلب بنجاح' })
   @ApiResponse({ status: 404, description: 'الطلب غير موجود' })
