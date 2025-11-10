@@ -19,6 +19,7 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { UserRole } from '../common/enums/user-role.enum';
+import { BulkCreateClientsDto } from './dto/bulk-create-clients.dto';
 
 @ApiTags('Clients')
 @Controller('clients')
@@ -36,6 +37,17 @@ export class ClientsController {
     @CurrentUser() user: any,
   ) {
     return this.clientsService.create(createClientDto, user.id);
+  }
+
+  @Post('bulk')
+  @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.AGENT)
+  @ApiOperation({ summary: 'إنشاء عدة عملاء دفعة واحدة' })
+  @ApiResponse({ status: 201, description: 'تم إنشاء العملاء بنجاح' })
+  async bulkCreate(
+    @Body() bulkCreateClientsDto: BulkCreateClientsDto,
+    @CurrentUser() user: any,
+  ) {
+    return this.clientsService.bulkCreate(bulkCreateClientsDto, user.id);
   }
 
   @Get()

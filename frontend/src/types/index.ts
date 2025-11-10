@@ -253,6 +253,32 @@ export interface CreateClientRequest {
   commitments?: string // JSON string for storing client commitments
 }
 
+export interface BulkClientEntry {
+  name: string
+  phonePrimary: string
+  notes?: string
+}
+
+export interface BulkCreateClientsResponse {
+  totalEntries: number
+  createdCount: number
+  createdClients: Client[]
+  duplicates: Array<{
+    phone: string
+    occurrences: number
+    indexes: number[]
+    existingClients: Array<{
+      id: string
+      name: string
+      phonePrimary: string
+    }>
+  }>
+  skipped: Array<{
+    index: number
+    reason: string
+  }>
+}
+
 export interface CreateRequestRequest {
   clientId: string
   title: string

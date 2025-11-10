@@ -1,11 +1,15 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from 'react-query'
 import {
+  CollisionDetection,
   DndContext,
   DragEndEvent,
   DragOverlay,
   DragStartEvent,
   PointerSensor,
+  closestCorners,
+  pointerWithin,
+  rectIntersection,
   useSensor,
   useSensors,
 } from '@dnd-kit/core'
@@ -27,6 +31,20 @@ const statusOrder: RequestStatus[] = [
   RequestStatus.SOLD,
   RequestStatus.NOT_SOLD,
 ]
+
+const collisionDetectionStrategy: CollisionDetection = (args) => {
+  const pointerCollisions = pointerWithin(args)
+  if (pointerCollisions.length > 0) {
+    return pointerCollisions
+  }
+
+  const rectCollisions = rectIntersection(args)
+  if (rectCollisions.length > 0) {
+    return rectCollisions
+  }
+
+  return closestCorners(args)
+}
 
 export default function KanbanBoard() {
   const [activeRequest, setActiveRequest] = useState<Request | null>(null)
@@ -131,6 +149,7 @@ export default function KanbanBoard() {
 
       <DndContext
         sensors={sensors}
+        collisionDetection={collisionDetectionStrategy}
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
       >

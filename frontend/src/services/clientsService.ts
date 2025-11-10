@@ -1,5 +1,11 @@
 import api from './api'
-import { Client, CreateClientRequest, Pagination } from '../types'
+import {
+  BulkClientEntry,
+  BulkCreateClientsResponse,
+  Client,
+  CreateClientRequest,
+  Pagination,
+} from '../types'
 
 export interface ClientsQuery {
   search?: string
@@ -43,6 +49,11 @@ export const clientsService = {
 
   async getClientStats(): Promise<any> {
     const response = await api.get('/clients/stats')
+    return response.data
+  },
+
+  async bulkCreate(data: { entries: BulkClientEntry[] }): Promise<BulkCreateClientsResponse> {
+    const response = await api.post('/clients/bulk', data)
     return response.data
   },
 }

@@ -9,6 +9,7 @@ import { CreateClientDto } from './dto/create-client.dto';
 import { UpdateClientDto } from './dto/update-client.dto';
 import { ClientQueryDto } from './dto/client-query.dto';
 import { UserRole } from '../common/enums/user-role.enum';
+import { BulkCreateClientsDto } from './dto/bulk-create-clients.dto';
 
 @Injectable()
 export class ClientsService {
@@ -39,6 +40,162 @@ export class ClientsService {
     });
 
     return client;
+  }
+
+  async bulkCreate(
+    bulkCreateClientsDto: BulkCreateClientsDto,
+    userId: string,
+  ) {
+    const sanitizePhone = (value: string) =>
+      value.replace(/\s+/g, '').trim();
+    const normalizePhone = (value: string) =>
+      value.replace(/[^0-9]/g, '');
+
+    const skipped: Array<{ index: number; reason: string }> = [];
+    const processed = bulkCreateClientsDto.entries
+      .map((entry, index) => {
+        const name = entry.name?.trim() ?? '';
+        const rawPhone = entry.phonePrimary ?? '';
+        const sanitizedPhone = sanitizePhone(rawPhone);
+        const normalizedPhone = normalizePhone(sanitizedPhone) || sanitizedPhone;
+
+        if (!name) {
+          skipped.push({ index, reason: 'الاسم فارغ' });
+          return null;
+        }
+
+        if (!sanitizedPhone) {
+          skipped.push({ index, reason: 'رقم الهاتف فارغ' });
+          return null;
+        }
+
+        return {
+          index,
+          name,
+          phonePrimary: sanitizedPhone,
+          normalizedPhone,
+          notes: entry.notes?.trim(),
+        };
+      })
+      .filter((item): item is NonNullable<typeof item> => item !== null);
+
+    if (processed.length === 0) {
+      return {
+        totalEntries: bulkCreateClientsDto.entries.length,
+        createdCount: 0,
+        createdClients: [],
+        duplicates: [],
+        skipped,
+      };
+    }
+
+    const normalizedPhoneSet = processed.map((item) => item.normalizedPhone);
+
+    const duplicatesMeta = new Map<
+      string,
+      { occurrences: number; indexes: number[] }
+    >();
+
+    for (const item of processed) {
+      const meta = duplicatesMeta.get(item.normalizedPhone);
+      if (meta) {
+        meta.occurrences += 1;
+        meta.indexes.push(item.index);
+      } else {
+        duplicatesMeta.set(item.normalizedPhone, {
+          occurrences: 1,
+          indexes: [item.index],
+        });
+      }
+    }
+
+    let existingClients: Array<{
+      id: string;
+      name: string;
+      phonePrimary: string;
+    }> = [];
+
+    if (normalizedPhoneSet.length > 0) {
+      const allCandidates = await this.prisma.client.findMany({
+        select: {
+          id: true,
+          name: true,
+          phonePrimary: true,
+        },
+      });
+
+      const normalizedLookup = new Set(normalizedPhoneSet);
+      existingClients = allCandidates.filter((candidate) =>
+        normalizedLookup.has(normalizePhone(candidate.phonePrimary)),
+      );
+    }
+
+    const existingByNormalized = new Map<
+      string,
+      { id: string; name: string; phonePrimary: string }[]
+    >();
+    for (const client of existingClients) {
+      const key = normalizePhone(client.phonePrimary);
+      const list = existingByNormalized.get(key) ?? [];
+      list.push(client);
+      existingByNormalized.set(key, list);
+    }
+
+    const duplicatePhones = new Set<string>();
+    for (const [phone, meta] of duplicatesMeta.entries()) {
+      if (meta.occurrences > 1) {
+        duplicatePhones.add(phone);
+      }
+    }
+    for (const phone of normalizedPhoneSet) {
+      if (existingByNormalized.has(phone)) {
+        duplicatePhones.add(phone);
+      }
+    }
+
+    const createdClients = await this.prisma.$transaction(
+      processed.map((item) =>
+        this.prisma.client.create({
+          data: {
+            name: item.name,
+            phonePrimary: item.phonePrimary,
+            notes: item.notes,
+            createdById: userId,
+          },
+          include: {
+            createdBy: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+              },
+            },
+            _count: {
+              select: {
+                requests: true,
+                attachments: true,
+                comments: true,
+              },
+            },
+          },
+        }),
+      ),
+    );
+
+    const duplicates = Array.from(duplicatePhones).map((phone) => ({
+      phone,
+      occurrences: duplicatesMeta.get(phone)?.occurrences ?? 1,
+      indexes: duplicatesMeta.get(phone)?.indexes ?? [],
+      existingClients: existingByNormalized.get(phone) ?? [],
+    }));
+
+    return {
+      totalEntries: bulkCreateClientsDto.entries.length,
+      createdCount: createdClients.length,
+      createdClients,
+      duplicates,
+      skipped,
+    };
   }
 
   async findAll(query: ClientQueryDto, userRole: UserRole, userId: string) {

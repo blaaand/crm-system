@@ -1,18 +1,131 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from 'react-query'
 import { Link } from 'react-router-dom'
 import { clientsService } from '../services/clientsService'
 import { PlusIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline'
 import * as XLSX from 'xlsx'
 import { DndContext, PointerSensor, useSensor, useSensors, DragEndEvent, useDroppable, useDraggable } from '@dnd-kit/core'
+import toast from 'react-hot-toast'
+import { BulkClientEntry } from '../types'
+
+type ParsedBulkEntry = {
+  index: number
+  name: string
+  phoneRaw: string
+  phoneSanitized: string
+  phoneNormalized: string
+  hasName: boolean
+  hasPhone: boolean
+  isDuplicateInInput: boolean
+}
 
 export default function Clients() {
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
   const [fromDate, setFromDate] = useState('')
   const [toDate, setToDate] = useState('')
+  const [bulkModalOpen, setBulkModalOpen] = useState(false)
+  const [bulkInput, setBulkInput] = useState('')
+
+  const bulkEntries = useMemo<ParsedBulkEntry[]>(() => {
+    if (!bulkInput.trim()) {
+      return []
+    }
+
+    const lines = bulkInput.split(/\r?\n/)
+    const entries: Omit<ParsedBulkEntry, 'index' | 'isDuplicateInInput'>[] = []
+
+    for (const rawLine of lines) {
+      const line = rawLine.trim()
+      if (!line) continue
+
+      const tabParts = line.split('\t').map((part) => part.trim()).filter(Boolean)
+      let name = ''
+      let phone = ''
+
+      if (tabParts.length >= 2) {
+        phone = tabParts[tabParts.length - 1]
+        name = tabParts.slice(0, -1).join(' ')
+      } else {
+        const match = line.match(/^(.+?)\s+([\d+][\d\s+()-]*)$/)
+        if (match) {
+          name = match[1].trim()
+          phone = match[2].trim()
+        } else {
+          name = line
+          phone = ''
+        }
+      }
+
+      const sanitizedPhone = phone.replace(/\s+/g, '')
+      const normalizedPhone = sanitizedPhone.replace(/[^0-9]/g, '') || sanitizedPhone
+
+      entries.push({
+        name,
+        phoneRaw: phone,
+        phoneSanitized: sanitizedPhone,
+        phoneNormalized: normalizedPhone,
+        hasName: name.length > 0,
+        hasPhone: sanitizedPhone.length > 0,
+      })
+    }
+
+    const counts = new Map<string, number>()
+    for (const entry of entries) {
+      if (!entry.phoneNormalized) continue
+      counts.set(entry.phoneNormalized, (counts.get(entry.phoneNormalized) ?? 0) + 1)
+    }
+
+    return entries.map((entry, index) => ({
+      index,
+      ...entry,
+      isDuplicateInInput:
+        !!entry.phoneNormalized && (counts.get(entry.phoneNormalized) ?? 0) > 1,
+    }))
+  }, [bulkInput])
+
+  const validBulkEntries = useMemo(
+    () => bulkEntries.filter((entry) => entry.hasName && entry.hasPhone),
+    [bulkEntries]
+  )
 
   const queryClient = useQueryClient()
+
+  const bulkCreateMutation = useMutation(
+    (payload: { entries: BulkClientEntry[] }) => clientsService.bulkCreate(payload),
+    {
+      onSuccess: (result) => {
+        toast.success(`تم استيراد ${result.createdCount} من أصل ${result.totalEntries} عميل`)
+
+        if (result.skipped.length > 0) {
+          toast.error(`تم تجاهل ${result.skipped.length} سطر بسبب نقص البيانات`)
+        }
+
+        if (result.duplicates.length > 0) {
+          const duplicateSummary = result.duplicates
+            .map((dup) => {
+              const existingCount = dup.existingClients?.length ?? 0
+              const existingNote = existingCount > 0 ? ` (موجود مسبقًا ${existingCount})` : ''
+              const repeatNote = dup.occurrences > 1 ? ` (تكرار ${dup.occurrences})` : ''
+              return `${dup.phone}${existingNote}${repeatNote}`
+            })
+            .join('، ')
+
+          toast(`⚠️ أرقام مكررة: ${duplicateSummary}`, {
+            icon: '⚠️',
+            duration: 6000,
+          })
+        }
+
+        setBulkInput('')
+        setBulkModalOpen(false)
+        queryClient.invalidateQueries('clients')
+      },
+      onError: (error: any) => {
+        toast.error(error?.response?.data?.message || 'حدث خطأ أثناء استيراد العملاء')
+      },
+    }
+  )
 
   const { data, isLoading, refetch } = useQuery(
     ['clients', { search, page }],
@@ -132,6 +245,20 @@ export default function Clients() {
     refetch()
   }
 
+  const handleBulkSubmit = () => {
+    const payload: BulkClientEntry[] = validBulkEntries.map((entry) => ({
+      name: entry.name,
+      phonePrimary: entry.phoneSanitized,
+    }))
+
+    if (payload.length === 0) {
+      toast.error('لا يوجد بيانات صالحة للاستيراد')
+      return
+    }
+
+    bulkCreateMutation.mutate({ entries: payload })
+  }
+
   return (
     <div>
       <div className="sm:flex sm:items-center mb-8">
@@ -141,7 +268,14 @@ export default function Clients() {
             قائمة بجميع العملاء المسجلين في النظام
           </p>
         </div>
-        <div className="mt-4 sm:mt-0 sm:ml-16 sm:flex-none">
+        <div className="mt-4 sm:mt-0 sm:ml-16 sm:flex-none flex flex-col sm:flex-row gap-2">
+          <button
+            type="button"
+            className="btn-outline"
+            onClick={() => setBulkModalOpen(true)}
+          >
+            📥 استيراد من جوجل شيت
+          </button>
           <Link
             to="/clients/new"
             className="btn-primary"
@@ -248,6 +382,102 @@ export default function Clients() {
           </div>
         </DndContext>
       </div>
+
+      {/* Bulk import modal */}
+      {bulkModalOpen && (
+        <div className="fixed inset-0 z-50">
+          <div
+            className="fixed inset-0 bg-black/40"
+            onClick={() => !bulkCreateMutation.isLoading && setBulkModalOpen(false)}
+          />
+          <div className="fixed inset-0 flex items-center justify-center p-4">
+            <div className="bg-white rounded-xl shadow-2xl w-full max-w-3xl p-6 space-y-4">
+              <div className="flex items-start justify-between">
+                <div>
+                  <h3 className="text-lg font-bold text-gray-900">استيراد عملاء من جوجل شيت</h3>
+                  <p className="text-sm text-gray-600 mt-1">
+                    الصق البيانات بالشكل: <span className="font-semibold">الاسم</span> ثم <span className="font-semibold">الرقم</span> مفصولين بـ Tab أو مسافة.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  className="text-gray-400 hover:text-gray-600"
+                  onClick={() => !bulkCreateMutation.isLoading && setBulkModalOpen(false)}
+                >
+                  ✕
+                </button>
+              </div>
+
+              <textarea
+                className="input h-36"
+                placeholder="مثال:\nمشعل العامري[TAB]966 0597560082"
+                value={bulkInput}
+                onChange={(e) => setBulkInput(e.target.value)}
+                dir="auto"
+              />
+
+              {bulkEntries.length > 0 ? (
+                <div className="border border-gray-200 rounded-lg max-h-64 overflow-y-auto divide-y">
+                  {bulkEntries.map((entry) => (
+                    <div
+                      key={entry.index}
+                      className={`flex items-start gap-4 px-3 py-2 ${entry.isDuplicateInInput ? 'bg-amber-50' : 'bg-white'}`}
+                    >
+                      <div className="text-xs text-gray-400 pt-1">{entry.index + 1}</div>
+                      <div className="flex-1">
+                        <div className="font-medium text-gray-900">
+                          {entry.hasName ? entry.name : <span className="text-red-500">🚫 الاسم مفقود</span>}
+                        </div>
+                        <div className="text-sm text-gray-600 mt-1" dir="ltr">
+                          {entry.hasPhone ? entry.phoneSanitized : <span className="text-red-500">🚫 الرقم مفقود</span>}
+                        </div>
+                      </div>
+                      <div className="text-xs text-right space-y-1">
+                        {entry.isDuplicateInInput && (
+                          <div className="text-amber-600 font-semibold">⚠️ مكرر في البيانات</div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-sm text-gray-500 bg-gray-50 border border-dashed border-gray-300 rounded-lg p-4">
+                  الصق البيانات هنا أو اكتبها يدويًا، سيتم تحليلها مباشرة.
+                </div>
+              )}
+
+              <div className="flex items-center justify-between text-sm text-gray-600">
+                <div>
+                  جاهز للاستيراد: <span className="font-semibold text-gray-900">{validBulkEntries.length}</span>
+                  {' '}/{' '}
+                  {bulkEntries.length} صف
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    className="btn-outline"
+                    onClick={() => {
+                      setBulkInput('')
+                      setBulkModalOpen(false)
+                    }}
+                    disabled={bulkCreateMutation.isLoading}
+                  >
+                    إغلاق
+                  </button>
+                  <button
+                    type="button"
+                    className="btn-primary"
+                    onClick={handleBulkSubmit}
+                    disabled={bulkCreateMutation.isLoading}
+                  >
+                    {bulkCreateMutation.isLoading ? 'جاري الاستيراد...' : 'إضافة العملاء'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Move with comment modal */}
       {moveModalOpen && selectedClientId && targetCol && (
