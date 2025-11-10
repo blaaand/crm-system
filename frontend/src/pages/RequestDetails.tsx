@@ -54,9 +54,12 @@ export default function RequestDetails() {
   })
 
   const installmentSummaryRef = useRef<HTMLDivElement | null>(null)
+  const installmentSummaryTextRef = useRef<string>('')
 
   const handleCopyInstallmentSummary = async () => {
-    const content = installmentSummaryRef.current?.innerText?.trim()
+    const generatedText = installmentSummaryTextRef.current?.trim() || ''
+    const domText = installmentSummaryRef.current?.innerText?.trim() || ''
+    const content = generatedText || domText
     if (!content) {
       toast.error('لا يوجد محتوى لنسخه')
       return
@@ -1625,6 +1628,30 @@ export default function RequestDetails() {
             const calculateFinancing = isRajhiBank ? calculateRajhiFinancing : calculateGeneralFinancing
             
             const financing = calculateFinancing()
+            
+            if (financing) {
+              const summaryLines = [
+                'هذه هي الحسبة التقريبية الخاصة بالسيارة، والحسبة النهائية تعتمد على موافقة البنك',
+                '',
+                `⏳ مدة التقسيط: ${Math.floor(financing.installmentMonths / 12)} سنة (${financing.installmentMonths} شهر)`,
+                `🚘 السيارة: ${financing.carName}`,
+                financing.downPayment > 0
+                  ? `💰 الدفعة الأولى: ${Math.round(financing.downPayment)} ريال`
+                  : '💰 الدفعة الأولى: بدون دفعة أولى',
+                `🔑 القسط الشهري (مع التأمين): ${Math.round(financing.monthlyInstallment)} ريال`,
+                financing.finalPayment > 0
+                  ? `📝 الدفعة الأخيرة: ${Math.round(financing.finalPayment)} ريال (مع إمكانية تقسيطها على سنتين)`
+                  : '📝 الدفعة الأخيرة: بدون دفعة أخيرة',
+                `⚙️ الرسوم الإدارية: ${financing.adminFees} ريال`,
+                '',
+                '💡 هذه الأسعار تشمل التأمين (الشامل) والضريبة واللوحات ونسبة المرابحة',
+                '',
+                '🔔 طبعًا هذه أرقام أولية لتوضيح الصورة العامة، والعرض النهائي سيكون بعد صدور الرد من البنك',
+              ]
+              installmentSummaryTextRef.current = summaryLines.join('\n')
+            } else {
+              installmentSummaryTextRef.current = ''
+            }
             
             // Debug: Log all calculation steps
             if (financing) {
