@@ -1,5 +1,5 @@
 import { useParams, Link, useNavigate } from 'react-router-dom'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useQuery, useMutation, useQueryClient } from 'react-query'
 import { requestsService } from '../services/requestsService'
 import { banksService } from '../services/banksService'
@@ -52,6 +52,48 @@ export default function RequestDetails() {
     carCategory: '',
     plateNumber: '',
   })
+
+  const installmentSummaryRef = useRef<HTMLDivElement | null>(null)
+
+  const handleCopyInstallmentSummary = async () => {
+    const content = installmentSummaryRef.current?.innerText?.trim()
+    if (!content) {
+      toast.error('لا يوجد محتوى لنسخه')
+      return
+    }
+
+    const fallbackCopy = () => {
+      const textarea = document.createElement('textarea')
+      textarea.value = content
+      textarea.style.position = 'fixed'
+      textarea.style.opacity = '0'
+      document.body.appendChild(textarea)
+      textarea.focus()
+      textarea.select()
+      const successful = document.execCommand('copy')
+      document.body.removeChild(textarea)
+      return successful
+    }
+
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(content)
+        toast.success('تم نسخ ملخص التقسيط')
+        return
+      }
+      if (fallbackCopy()) {
+        toast.success('تم نسخ ملخص التقسيط')
+        return
+      }
+      throw new Error('Clipboard API غير مدعوم')
+    } catch (error) {
+      if (fallbackCopy()) {
+        toast.success('تم نسخ ملخص التقسيط')
+      } else {
+        toast.error('تعذر نسخ الملخص تلقائيًا، حاول النسخ يدويًا')
+      }
+    }
+  }
   
   const { data: request, isLoading } = useQuery(
     ['request', id],
@@ -419,142 +461,142 @@ export default function RequestDetails() {
                 <div className="card-body space-y-6">
                   {/* صف 1: بيانات العميل + الالتزامات */}
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                    {/* بيانات العميل الإضافية */}
+                  {/* بيانات العميل الإضافية */}
                     <div className="border-2 border-purple-200 rounded-lg p-4 bg-purple-50">
                       <h4 className="text-sm font-bold text-purple-900 mb-3">📋 بيانات العميل الإضافية</h4>
                       <div className="space-y-3">
-                        {request.installmentDetails.carName && (
+                      {request.installmentDetails.carName && (
                           <div>
                             <p className="text-xs text-purple-600 mb-1">السيارة المطلوبة 🚗</p>
                             <p className="text-base font-semibold text-purple-900">{request.installmentDetails.carName}</p>
-                          </div>
-                        )}
-                        
-                        {request.installmentDetails.workOrganization && (
+                        </div>
+                      )}
+                      
+                      {request.installmentDetails.workOrganization && (
                           <div>
-                            <p className="text-xs text-purple-600 mb-1">جهة العمل 💼</p>
+                          <p className="text-xs text-purple-600 mb-1">جهة العمل 💼</p>
                             <p className="text-base font-semibold text-purple-900">
-                              {request.installmentDetails.workOrganization === 'COMPANY' && 'شركة'}
-                              {request.installmentDetails.workOrganization === 'PRIVATE_APPROVED' && 'خاص معتمد'}
-                              {request.installmentDetails.workOrganization === 'PRIVATE_UNAPPROVED' && 'خاص غير معتمد'}
-                              {request.installmentDetails.workOrganization === 'GOVERNMENT' && 'حكومي'}
-                              {request.installmentDetails.workOrganization === 'MILITARY' && 'عسكري'}
-                              {request.installmentDetails.workOrganization === 'RETIRED' && 'متقاعد'}
-                              {!['COMPANY', 'PRIVATE_APPROVED', 'PRIVATE_UNAPPROVED', 'GOVERNMENT', 'MILITARY', 'RETIRED'].includes(request.installmentDetails.workOrganization) && request.installmentDetails.workOrganization}
-                            </p>
-                          </div>
-                        )}
-                        
-                        {request.installmentDetails.age && (
+                            {request.installmentDetails.workOrganization === 'COMPANY' && 'شركة'}
+                            {request.installmentDetails.workOrganization === 'PRIVATE_APPROVED' && 'خاص معتمد'}
+                            {request.installmentDetails.workOrganization === 'PRIVATE_UNAPPROVED' && 'خاص غير معتمد'}
+                            {request.installmentDetails.workOrganization === 'GOVERNMENT' && 'حكومي'}
+                            {request.installmentDetails.workOrganization === 'MILITARY' && 'عسكري'}
+                            {request.installmentDetails.workOrganization === 'RETIRED' && 'متقاعد'}
+                            {!['COMPANY', 'PRIVATE_APPROVED', 'PRIVATE_UNAPPROVED', 'GOVERNMENT', 'MILITARY', 'RETIRED'].includes(request.installmentDetails.workOrganization) && request.installmentDetails.workOrganization}
+                          </p>
+                        </div>
+                      )}
+                      
+                      {request.installmentDetails.age && (
                           <div>
                             <p className="text-xs text-purple-600 mb-1">العمر 🎂</p>
                             <p className="text-base font-semibold text-purple-900">{request.installmentDetails.age} سنة</p>
-                          </div>
-                        )}
-                        
-                        {request.installmentDetails.salary && (
+                        </div>
+                      )}
+                      
+                      {request.installmentDetails.salary && (
                           <div>
                             <p className="text-xs text-purple-600 mb-1">مبلغ الراتب 💰</p>
                             <p className="text-base font-semibold text-purple-900">{Number(request.installmentDetails.salary).toLocaleString()} ريال</p>
-                          </div>
-                        )}
+                        </div>
+                      )}
 
-                        {request.installmentDetails.salaryBank && (
+                      {request.installmentDetails.salaryBank && (
                           <div>
                             <p className="text-xs text-purple-600 mb-1">بنك الراتب 🏛️</p>
                             <p className="text-base font-semibold text-purple-900">{request.installmentDetails.salaryBank.name}</p>
-                          </div>
-                        )}
+                        </div>
+                      )}
 
-                        {request.installmentDetails.financingBank && (
+                      {request.installmentDetails.financingBank && (
                           <div>
                             <p className="text-xs text-purple-600 mb-1">البنك المختار للتمويل 🏦</p>
                             <p className="text-base font-semibold text-purple-900">{request.installmentDetails.financingBank.name}</p>
-                          </div>
-                        )}
-                      </div>
+                        </div>
+                      )}
                     </div>
+                  </div>
 
-                    {/* الالتزامات */}
-                    {(request.installmentDetails.deductionPercentage || 
-                      request.installmentDetails.obligation1 || 
-                      request.installmentDetails.obligation2 || 
+                  {/* الالتزامات */}
+                  {(request.installmentDetails.deductionPercentage || 
+                    request.installmentDetails.obligation1 || 
+                    request.installmentDetails.obligation2 || 
                       request.installmentDetails.visaAmount ||
                       request.installmentDetails.deductedAmount ||
                       request.installmentDetails.finalAmount) && (
                       <div className="border-2 border-orange-200 rounded-lg p-4 bg-orange-50">
                         <h4 className="text-sm font-bold text-orange-900 mb-3">📊 الالتزامات</h4>
                         <div className="space-y-3">
-                          {request.installmentDetails.deductionPercentage && (
+                        {request.installmentDetails.deductionPercentage && (
                             <div>
                               <p className="text-xs text-orange-600 mb-1">نسبة الاستقطاع</p>
                               <p className="text-base font-semibold text-orange-900">{request.installmentDetails.deductionPercentage}%</p>
-                            </div>
-                          )}
+                          </div>
+                        )}
 
-                          {request.installmentDetails.obligation1 && (
+                        {request.installmentDetails.obligation1 && (
                             <div>
-                              <p className="text-xs text-orange-600 mb-1">التزام 1</p>
+                            <p className="text-xs text-orange-600 mb-1">التزام 1</p>
                               <p className="text-base font-semibold text-orange-900">{Number(request.installmentDetails.obligation1).toLocaleString()} ريال</p>
-                            </div>
-                          )}
+                          </div>
+                        )}
 
-                          {request.installmentDetails.obligation2 && (
+                        {request.installmentDetails.obligation2 && (
                             <div>
-                              <p className="text-xs text-orange-600 mb-1">التزام 2</p>
+                            <p className="text-xs text-orange-600 mb-1">التزام 2</p>
                               <p className="text-base font-semibold text-orange-900">{Number(request.installmentDetails.obligation2).toLocaleString()} ريال</p>
-                            </div>
-                          )}
+                          </div>
+                        )}
 
-                          {request.installmentDetails.visaAmount && (
+                        {request.installmentDetails.visaAmount && (
                             <div>
                               <p className="text-xs text-orange-600 mb-1">الفيزا 💳</p>
                               <p className="text-base font-semibold text-orange-900">{Number(request.installmentDetails.visaAmount).toLocaleString()} ريال</p>
-                            </div>
-                          )}
+                          </div>
+                        )}
 
-                          {request.installmentDetails.deductedAmount && (
+                        {request.installmentDetails.deductedAmount && (
                             <div>
                               <p className="text-xs text-orange-600 mb-1">المبلغ المستقطع</p>
                               <p className="text-base font-semibold text-orange-900">{Number(request.installmentDetails.deductedAmount).toLocaleString()} ريال</p>
-                            </div>
-                          )}
+                          </div>
+                        )}
 
-                          {request.installmentDetails.finalAmount && (
+                        {request.installmentDetails.finalAmount && (
                             <div>
                               <p className="text-xs text-orange-600 mb-1">المبلغ النهائي بعد الالتزامات</p>
                               <p className="text-base font-semibold text-orange-900">{Number(request.installmentDetails.finalAmount).toLocaleString()} ريال</p>
-                            </div>
-                          )}
-                        </div>
-                        
-                        {/* المعادلات الحسابية */}
-                        {(request.installmentDetails.salary || request.installmentDetails.deductedAmount || request.installmentDetails.finalAmount) && (
+                          </div>
+                        )}
+                      </div>
+                      
+                      {/* المعادلات الحسابية */}
+                      {(request.installmentDetails.salary || request.installmentDetails.deductedAmount || request.installmentDetails.finalAmount) && (
                           <div className="mt-4 bg-white rounded-lg p-3 border border-orange-300">
                             <h5 className="text-xs font-bold text-orange-900 mb-2">🧮 المعادلات:</h5>
                             <div className="space-y-1 text-xs text-gray-600">
-                              {request.installmentDetails.salary && request.installmentDetails.deductionPercentage && (
-                                <div className="flex justify-between items-center">
+                            {request.installmentDetails.salary && request.installmentDetails.deductionPercentage && (
+                              <div className="flex justify-between items-center">
                                   <span>الراتب × {request.installmentDetails.deductionPercentage}%:</span>
                                   <span className="font-bold text-blue-600">{Number(request.installmentDetails.deductedAmount).toLocaleString()} ريال</span>
-                                </div>
-                              )}
-                              
-                              {(request.installmentDetails.obligation1 || request.installmentDetails.obligation2 || request.installmentDetails.visaAmount) && (
+                              </div>
+                            )}
+                            
+                            {(request.installmentDetails.obligation1 || request.installmentDetails.obligation2 || request.installmentDetails.visaAmount) && (
                                 <div className="flex justify-between items-center border-t pt-1">
                                   <span>إجمالي الالتزامات:</span>
                                   <span className="font-bold text-red-600">
                                     {Math.round(Number(request.installmentDetails.obligation1 || 0) + Number(request.installmentDetails.obligation2 || 0) + Number(request.installmentDetails.visaAmount || 0) * 0.05).toLocaleString()} ريال
-                                  </span>
-                                </div>
-                              )}
-                              
+                                </span>
+                              </div>
+                            )}
+                            
                               {request.installmentDetails.finalAmount && (
                                 <div className="flex justify-between items-center border-t pt-1">
                                   <span>المبلغ المسموح:</span>
                                   <span className="font-bold text-green-700">{Number(request.installmentDetails.finalAmount).toLocaleString()} ريال</span>
-                                </div>
-                              )}
+                              </div>
+                            )}
                             </div>
                           </div>
                         )}
@@ -578,26 +620,26 @@ export default function RequestDetails() {
                             <div className="flex justify-between items-center">
                               <span className="text-xs text-green-700">سعر السيارة الأساسي</span>
                               <span className="text-sm font-semibold text-green-900">{Number(request.installmentDetails.carPrice).toLocaleString()} ريال</span>
-                            </div>
-                          )}
+                              </div>
+                            )}
                           {request.installmentDetails.additionalFees && (
                             <div className="flex justify-between items-center">
                               <span className="text-xs text-green-700">زيادة إضافية</span>
                               <span className="text-sm font-semibold text-green-900">{Number(request.installmentDetails.additionalFees).toLocaleString()} ريال</span>
-                            </div>
+                          </div>
                           )}
                           {request.installmentDetails.shipping && (
                             <div className="flex justify-between items-center">
                               <span className="text-xs text-green-700">الشحن</span>
                               <span className="text-sm font-semibold text-green-900">{Number(request.installmentDetails.shipping).toLocaleString()} ريال</span>
-                            </div>
-                          )}
+                        </div>
+                      )}
                           {request.installmentDetails.registration && (
                             <div className="flex justify-between items-center">
                               <span className="text-xs text-green-700">التجيير</span>
                               <span className="text-sm font-semibold text-green-900">{Number(request.installmentDetails.registration).toLocaleString()} ريال</span>
-                            </div>
-                          )}
+                    </div>
+                  )}
                           {request.installmentDetails.otherAdditions && (
                             <div className="flex justify-between items-center">
                               <span className="text-xs text-green-700">زيادة أخرى</span>
@@ -640,8 +682,8 @@ export default function RequestDetails() {
                             )
                           })()}
                         </div>
-                      </div>
-                    )}
+                        </div>
+                      )}
 
                     {/* تحليل ايراد سريع */}
                     {(() => {
@@ -669,12 +711,12 @@ export default function RequestDetails() {
                             <div className="flex justify-between items-center">
                               <span className="text-xs text-yellow-700">سعر البيع (تلقائي)</span>
                               <span className="text-sm font-semibold text-yellow-900">{Math.round(priceWithPlateNoTax).toLocaleString()} ريال</span>
-                            </div>
+                      </div>
                             {quickCost > 0 && (
                               <div className="flex justify-between items-center">
                                 <span className="text-xs text-yellow-700">سعر التكلفة</span>
                                 <span className="text-sm font-semibold text-yellow-900">{Number(quickCost).toLocaleString()} ريال</span>
-                              </div>
+                    </div>
                             )}
                             <div className="flex justify-between items-center">
                               <span className="text-xs text-yellow-700">مصروفات البيع</span>
@@ -1613,8 +1655,15 @@ export default function RequestDetails() {
             
             return (
               <div className="card bg-gradient-to-br from-amber-50 to-orange-50 border-2 border-amber-200">
-                <div className="card-header">
+                <div className="card-header flex items-center justify-between gap-3">
                   <h3 className="text-lg font-medium text-gray-900">📋 ملخص التقسيط</h3>
+                  <button
+                    type="button"
+                    className="btn-outline btn-sm"
+                    onClick={handleCopyInstallmentSummary}
+                  >
+                    📋 نسخ الملخص
+                  </button>
                 </div>
                 <div className="card-body">
                   {showWarning && (
@@ -1645,7 +1694,10 @@ export default function RequestDetails() {
                     </div>
                   )}
                   
-                  <div className="text-sm text-gray-700 space-y-3 leading-relaxed">
+                  <div
+                    ref={installmentSummaryRef}
+                    className="text-sm text-gray-700 space-y-3 leading-relaxed"
+                  >
                     <p className="text-xs text-gray-500 border-b pb-2 mb-3">
                       هذه هي الحسبة التقريبية الخاصة بالسيارة، والحسبة النهائية تعتمد على موافقة البنك
                     </p>
