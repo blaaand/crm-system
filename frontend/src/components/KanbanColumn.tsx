@@ -54,6 +54,10 @@ const getBadgeColor = (status: RequestStatus) => {
 export default function KanbanColumn({ status, title, requests }: KanbanColumnProps) {
   const { setNodeRef, isOver } = useDroppable({
     id: status,
+    data: {
+      type: 'column',
+      status: status,
+    }
   })
 
   return (

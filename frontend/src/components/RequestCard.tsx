@@ -26,7 +26,14 @@ export default function RequestCard({ request, isDragging }: RequestCardProps) {
     transform,
     transition,
     isDragging: isSortableDragging,
-  } = useSortable({ id: request.id })
+  } = useSortable({ 
+    id: request.id,
+    data: {
+      type: 'request-card',
+      request: request,
+      containerId: request.currentStatus, // Store the current status (column) for easy access
+    }
+  })
 
   const style = {
     transform: CSS.Transform.toString(transform),

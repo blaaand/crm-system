@@ -36,12 +36,28 @@ const collisionDetectionStrategy: CollisionDetection = (args) => {
   // First, try pointerWithin - if pointer is within a droppable, use it
   const pointerCollisions = pointerWithin(args)
   if (pointerCollisions.length > 0) {
+    // Prioritize columns over cards
+    const columnCollisions = pointerCollisions.filter(collision => {
+      const data = collision.data?.current
+      return data?.type === 'column'
+    })
+    if (columnCollisions.length > 0) {
+      return columnCollisions
+    }
     return pointerCollisions
   }
 
   // Second, try rectIntersection - if rectangles intersect, use it
   const rectCollisions = rectIntersection(args)
   if (rectCollisions.length > 0) {
+    // Prioritize columns over cards
+    const columnCollisions = rectCollisions.filter(collision => {
+      const data = collision.data?.current
+      return data?.type === 'column'
+    })
+    if (columnCollisions.length > 0) {
+      return columnCollisions
+    }
     return rectCollisions
   }
 
@@ -99,24 +115,42 @@ export default function KanbanBoard() {
     // Determine the target status
     let newStatus: RequestStatus | null = null
 
-    // If over.id is a RequestStatus (column), use it directly
-    if (statusOrder.includes(over.id as RequestStatus)) {
+    // Get data from the dropped element
+    const overData: any = over.data?.current
+
+    // Priority 1: If dropped directly on a column
+    if (overData?.type === 'column' && overData?.status) {
+      newStatus = overData.status as RequestStatus
+    }
+    // Priority 2: If over.id is a RequestStatus (column), use it directly
+    else if (statusOrder.includes(over.id as RequestStatus)) {
       newStatus = over.id as RequestStatus
-    } else {
-      // If dropped over a card, try to get its containerId (column id)
-      const overData: any = over.data?.current
-      if (overData?.sortable?.containerId) {
-        newStatus = overData.sortable.containerId as RequestStatus
-      } else if (statusOrder.includes(over.id as RequestStatus)) {
-        newStatus = over.id as RequestStatus
+    }
+    // Priority 3: If dropped over a card, get its containerId
+    else if (overData?.type === 'request-card' && overData?.containerId) {
+      newStatus = overData.containerId as RequestStatus
+    }
+    // Priority 4: Try to get containerId from sortable data
+    else if (overData?.sortable?.containerId) {
+      newStatus = overData.sortable.containerId as RequestStatus
+    }
+    // Priority 5: Search for the request in kanbanData to find its column
+    else {
+      // Find which column contains this request ID
+      const targetRequest = findRequestById(over.id as string)
+      if (targetRequest) {
+        newStatus = targetRequest.currentStatus
       }
     }
 
-    // If we have a valid new status and it's different from current, show modal
+    // If we have a valid new status and it's different from current, move immediately
     if (newStatus && request.currentStatus !== newStatus) {
-      setSelectedRequest(request)
-      setTargetStatus(newStatus)
-      setMoveModalOpen(true)
+      // Move immediately without showing modal
+      moveRequestMutation.mutate({ 
+        id: request.id, 
+        toStatus: newStatus,
+        comment: undefined // No comment for instant move
+      })
     }
   }
 
