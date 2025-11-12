@@ -131,17 +131,16 @@ async function bootstrap() {
     app.setGlobalPrefix('api');
     console.log('✅ Global prefix set to /api');
 
-    // Health check endpoint with CORS headers
+    // Health check endpoint - CORS will be handled by middleware
     app.getHttpAdapter().get('/api/health', (req, res) => {
-      const origin = req.headers.origin;
-      if (origin && allowedOrigins.includes(origin)) {
-        res.setHeader('Access-Control-Allow-Origin', origin);
-        res.setHeader('Access-Control-Allow-Credentials', 'true');
-      }
       res.status(200).json({ 
         status: 'OK', 
         message: 'Server is running',
         timestamp: new Date().toISOString(),
+        cors: {
+          allowedOrigins: allowedOrigins,
+          requestOrigin: req.headers.origin || 'no origin',
+        },
       });
     });
     console.log('✅ Health check endpoint configured at /api/health');
