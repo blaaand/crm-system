@@ -127,51 +127,106 @@ export default function KanbanBoard() {
     }
   )
 
+  const findRequestById = (id: string): Request | null => {
+    if (!kanbanData) return null
+    for (const column of kanbanData) {
+      const request = column.requests.find((r) => r.id === id)
+      if (request) return request
+    }
+    return null
+  }
+
   const handleDragStart = (event: DragStartEvent) => {
     const { active } = event
     const request = findRequestById(active.id as string)
     setActiveRequest(request)
+    setCurrentOverStatus(null)
+  }
+
+  const handleDragOver = (event: DragOverEvent) => {
+    const { over } = event
+    if (!over) {
+      setCurrentOverStatus(null)
+      return
+    }
+
+    // Get data from the element being dragged over
+    const overData: any = over.data?.current
+
+    // Determine the current status being dragged over
+    let status: RequestStatus | null = null
+
+    // Priority 1: If over a column directly
+    if (overData?.type === 'column' && overData?.status) {
+      status = overData.status as RequestStatus
+    }
+    // Priority 2: If over.id is a RequestStatus (column)
+    else if (statusOrder.includes(over.id as RequestStatus)) {
+      status = over.id as RequestStatus
+    }
+    // Priority 3: If over a card, get its containerId
+    else if (overData?.type === 'request-card' && overData?.containerId) {
+      status = overData.containerId as RequestStatus
+    }
+    // Priority 4: Try to find the request and get its status
+    else {
+      const targetRequest = findRequestById(over.id as string)
+      if (targetRequest) {
+        status = targetRequest.currentStatus
+      }
+    }
+
+    setCurrentOverStatus(status)
   }
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event
     setActiveRequest(null)
 
-    if (!over) return
+    if (!over) {
+      setCurrentOverStatus(null)
+      return
+    }
 
     const request = findRequestById(active.id as string)
-    if (!request) return
+    if (!request) {
+      setCurrentOverStatus(null)
+      return
+    }
 
-    // Determine the target status
-    let newStatus: RequestStatus | null = null
+    // Determine the target status - use currentOverStatus if available, otherwise try to determine from over
+    let newStatus: RequestStatus | null = currentOverStatus
 
-    // Get data from the dropped element
-    const overData: any = over.data?.current
+    // If currentOverStatus is not set, try to determine from over
+    if (!newStatus) {
+      const overData: any = over.data?.current
 
-    // Priority 1: If dropped directly on a column
-    if (overData?.type === 'column' && overData?.status) {
-      newStatus = overData.status as RequestStatus
-    }
-    // Priority 2: If over.id is a RequestStatus (column), use it directly
-    else if (statusOrder.includes(over.id as RequestStatus)) {
-      newStatus = over.id as RequestStatus
-    }
-    // Priority 3: If dropped over a card, get its containerId
-    else if (overData?.type === 'request-card' && overData?.containerId) {
-      newStatus = overData.containerId as RequestStatus
-    }
-    // Priority 4: Try to get containerId from sortable data
-    else if (overData?.sortable?.containerId) {
-      newStatus = overData.sortable.containerId as RequestStatus
-    }
-    // Priority 5: Search for the request in kanbanData to find its column
-    else {
-      // Find which column contains this request ID
-      const targetRequest = findRequestById(over.id as string)
-      if (targetRequest) {
-        newStatus = targetRequest.currentStatus
+      // Priority 1: If dropped directly on a column
+      if (overData?.type === 'column' && overData?.status) {
+        newStatus = overData.status as RequestStatus
+      }
+      // Priority 2: If over.id is a RequestStatus (column), use it directly
+      else if (statusOrder.includes(over.id as RequestStatus)) {
+        newStatus = over.id as RequestStatus
+      }
+      // Priority 3: If dropped over a card, get its containerId
+      else if (overData?.type === 'request-card' && overData?.containerId) {
+        newStatus = overData.containerId as RequestStatus
+      }
+      // Priority 4: Try to get containerId from sortable data
+      else if (overData?.sortable?.containerId) {
+        newStatus = overData.sortable.containerId as RequestStatus
+      }
+      // Priority 5: Search for the request in kanbanData to find its column
+      else {
+        const targetRequest = findRequestById(over.id as string)
+        if (targetRequest) {
+          newStatus = targetRequest.currentStatus
+        }
       }
     }
+
+    setCurrentOverStatus(null)
 
     // If we have a valid new status and it's different from current, show modal
     if (newStatus && request.currentStatus !== newStatus) {
@@ -189,15 +244,6 @@ export default function KanbanBoard() {
         comment,
       })
     }
-  }
-
-  const findRequestById = (id: string): Request | null => {
-    if (!kanbanData) return null
-    for (const column of kanbanData) {
-      const request = column.requests.find((r) => r.id === id)
-      if (request) return request
-    }
-    return null
   }
 
   // const findStatusByRequestId = (id: string): RequestStatus | null => {
@@ -230,6 +276,7 @@ export default function KanbanBoard() {
         sensors={sensors}
         collisionDetection={collisionDetectionStrategy}
         onDragStart={handleDragStart}
+        onDragOver={handleDragOver}
         onDragEnd={handleDragEnd}
       >
           <div className="flex-1 flex gap-4 overflow-x-auto p-6 bg-gray-50">
