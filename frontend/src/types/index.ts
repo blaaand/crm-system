@@ -130,6 +130,7 @@ export interface Request {
   createdBy?: User
   installmentDetails?: InstallmentDetails
   events?: RequestEvent[]
+  comments?: Comment[]
   _count?: {
     attachments: number
     comments: number

@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from 'react-query'
 import { requestsService } from '../services/requestsService'
 import { banksService } from '../services/banksService'
 import { formatDateTime, getRelativeTime } from '../utils/dateUtils'
-import { RequestStatus } from '../types'
+import { RequestStatus, Comment } from '../types'
 import { 
   ArrowLeftIcon, 
   ClockIcon,
@@ -59,7 +59,6 @@ export default function RequestDetails() {
   const [commentText, setCommentText] = useState('')
   const [showMoveModal, setShowMoveModal] = useState(false)
   const [targetStatus, setTargetStatus] = useState<RequestStatus | null>(null)
-  const [moveComment, setMoveComment] = useState('')
 
   const installmentSummaryRef = useRef<HTMLDivElement | null>(null)
   const installmentSummaryTextRef = useRef<string>('')
@@ -297,7 +296,6 @@ export default function RequestDetails() {
         toast.success('تم نقل الطلب بنجاح')
         setShowMoveModal(false)
         setTargetStatus(null)
-        setMoveComment('')
         queryClient.invalidateQueries(['request', id])
         queryClient.invalidateQueries('kanbanData')
       },
@@ -1202,10 +1200,10 @@ export default function RequestDetails() {
 
                 // Add comments
                 if (request.comments && request.comments.length > 0) {
-                  request.comments.forEach((comment) => {
+                  request.comments.forEach((comment: Comment) => {
                     allItems.push({
                       id: comment.id,
-                      type: 'comment',
+                      type: 'comment' as const,
                       createdAt: comment.createdAt,
                       data: comment,
                     })
@@ -1217,7 +1215,7 @@ export default function RequestDetails() {
                   request.events.forEach((event) => {
                     allItems.push({
                       id: event.id,
-                      type: 'event',
+                      type: 'event' as const,
                       createdAt: event.createdAt,
                       data: event,
                     })
@@ -2229,7 +2227,6 @@ export default function RequestDetails() {
           onClose={() => {
             setShowMoveModal(false)
             setTargetStatus(null)
-            setMoveComment('')
           }}
           request={request}
           onMove={(comment) => {
