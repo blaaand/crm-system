@@ -29,24 +29,7 @@ async function bootstrap() {
       // Continue anyway - fields might already exist
     }
 
-    // Increase body size limit for large inventory files (50MB)
-    console.log('🔄 Setting up Express middleware...');
-    const expressApp = app.getHttpAdapter().getInstance();
-    expressApp.use(express.json({ limit: '50mb' }));
-    expressApp.use(express.urlencoded({ limit: '50mb', extended: true }));
-    console.log('✅ Express middleware configured');
-
-    // Set global prefix
-    app.setGlobalPrefix('api');
-    console.log('✅ Global prefix set to /api');
-
-    // Health check endpoint
-    app.getHttpAdapter().get('/api/health', (req, res) => {
-      res.status(200).json({ status: 'OK', message: 'Server is running' });
-    });
-    console.log('✅ Health check endpoint configured at /api/health');
-
-    // Enable CORS
+    // Enable CORS FIRST - before any other middleware
     const defaultOrigins = [
       'http://localhost:5173',
       'http://localhost:3001',
@@ -69,30 +52,9 @@ async function bootstrap() {
     console.log(`🌐 CORS origins: ${allowedOrigins.join(', ')}`);
     console.log(`🌐 CORS_ORIGIN env: ${process.env.CORS_ORIGIN || 'not set'}`);
     
+    // Enable CORS with comprehensive configuration
     app.enableCors({
-      origin: (origin, callback) => {
-        // Allow requests with no origin (like mobile apps, Postman, or curl requests)
-        if (!origin) {
-          console.log('✅ CORS: Allowing request with no origin');
-          return callback(null, true);
-        }
-        
-        // Check if origin is in allowed list
-        if (allowedOrigins.includes(origin)) {
-          console.log(`✅ CORS: Allowing origin: ${origin}`);
-          callback(null, true);
-        } else {
-          console.warn(`⚠️ CORS: Blocked origin: ${origin}`);
-          console.warn(`⚠️ CORS: Allowed origins: ${allowedOrigins.join(', ')}`);
-          // For development, allow all origins (remove in production)
-          if (process.env.NODE_ENV !== 'production') {
-            console.log(`⚠️ CORS: Allowing blocked origin in development mode`);
-            callback(null, true);
-          } else {
-            callback(new Error('Not allowed by CORS'));
-          }
-        }
-      },
+      origin: allowedOrigins, // Use array directly - simpler and more reliable
       credentials: true,
       methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS', 'HEAD'],
       allowedHeaders: [
@@ -101,20 +63,41 @@ async function bootstrap() {
         'Accept',
         'Origin',
         'X-Requested-With',
-        'Access-Control-Allow-Origin',
-        'Access-Control-Allow-Headers',
-        'Access-Control-Allow-Methods',
       ],
       exposedHeaders: [
         'Content-Type',
         'Authorization',
-        'Access-Control-Allow-Origin',
-        'Access-Control-Allow-Credentials',
       ],
       preflightContinue: false,
       optionsSuccessStatus: 204,
     });
-    console.log('✅ CORS enabled with enhanced configuration');
+    console.log('✅ CORS enabled with comprehensive configuration');
+
+    // Increase body size limit for large inventory files (50MB)
+    console.log('🔄 Setting up Express middleware...');
+    const expressApp = app.getHttpAdapter().getInstance();
+    expressApp.use(express.json({ limit: '50mb' }));
+    expressApp.use(express.urlencoded({ limit: '50mb', extended: true }));
+    console.log('✅ Express middleware configured');
+
+    // Set global prefix
+    app.setGlobalPrefix('api');
+    console.log('✅ Global prefix set to /api');
+
+    // Health check endpoint with CORS headers
+    app.getHttpAdapter().get('/api/health', (req, res) => {
+      const origin = req.headers.origin;
+      if (origin && allowedOrigins.includes(origin)) {
+        res.setHeader('Access-Control-Allow-Origin', origin);
+        res.setHeader('Access-Control-Allow-Credentials', 'true');
+      }
+      res.status(200).json({ 
+        status: 'OK', 
+        message: 'Server is running',
+        timestamp: new Date().toISOString(),
+      });
+    });
+    console.log('✅ Health check endpoint configured at /api/health');
 
     // Global validation pipe
     app.useGlobalPipes(
