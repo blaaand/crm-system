@@ -380,42 +380,90 @@ export default function RequestDetails() {
 
       {/* Stage Navigation Bar */}
       {request && (
-        <div className="mb-6 card">
-          <div className="card-body p-4">
-            <h3 className="text-sm font-bold text-gray-700 mb-4">مراحل الطلب</h3>
-            <div className="flex flex-wrap items-center gap-2">
-              {statusOrder.map((status, index) => {
-                const isActive = status === request.currentStatus
-                const isPast = statusOrder.indexOf(request.currentStatus as RequestStatus) > index
-                const isClickable = !isActive
-                
-                return (
-                  <div key={status} className="flex items-center">
-                    <button
-                      onClick={() => handleStageClick(status)}
-                      disabled={!isClickable || moveRequestMutation.isLoading}
-                      className={`
-                        px-4 py-2 rounded-lg text-sm font-bold transition-all duration-200
-                        ${isActive 
-                          ? 'bg-blue-600 text-white shadow-lg ring-2 ring-blue-300 ring-offset-2' 
-                          : isPast
-                          ? 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                          : 'bg-gray-100 text-gray-500 hover:bg-gray-200 hover:text-gray-700'
-                        }
-                        ${isClickable && !moveRequestMutation.isLoading ? 'cursor-pointer' : 'cursor-not-allowed'}
-                        ${!isActive && isClickable ? 'hover:scale-105' : ''}
-                      `}
-                      title={isActive ? 'المرحلة الحالية' : `انقر لنقل الطلب إلى: ${getStatusTitle(status)}`}
-                    >
-                      {isActive && <CheckCircleIcon className="inline-block h-4 w-4 ml-1" />}
-                      {getStatusTitle(status)}
-                    </button>
-                    {index < statusOrder.length - 1 && (
-                      <ArrowRightIcon className={`h-5 w-5 mx-2 ${isPast ? 'text-gray-400' : 'text-gray-300'}`} />
-                    )}
-                  </div>
-                )
-              })}
+        <div className="mb-6">
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div className="flex items-center justify-end gap-0 overflow-x-auto pb-2" dir="rtl">
+              <div className="flex items-center min-w-max">
+                {statusOrder.map((status, index) => {
+                  const currentStatusIndex = statusOrder.indexOf(request.currentStatus as RequestStatus)
+                  const isActive = status === request.currentStatus
+                  const isCompleted = currentStatusIndex > index
+                  const isPending = currentStatusIndex < index
+                  const isClickable = !isActive && !moveRequestMutation.isLoading
+                  
+                  return (
+                    <div key={status} className="flex items-center">
+                      {/* Stage Card */}
+                      <button
+                        onClick={() => isClickable && handleStageClick(status)}
+                        disabled={!isClickable}
+                        className={`
+                          relative flex flex-col items-center justify-center
+                          min-w-[160px] max-w-[180px] px-5 py-4 rounded-lg
+                          text-sm font-medium transition-all duration-200
+                          border-2
+                          ${isActive 
+                            ? 'bg-blue-50 border-blue-400 text-blue-700 shadow-md hover:bg-blue-100' 
+                            : isCompleted
+                            ? 'bg-blue-50 border-blue-300 text-blue-600 hover:bg-blue-100 cursor-pointer'
+                            : 'bg-gray-50 border-gray-200 text-gray-500 hover:bg-gray-100 hover:border-gray-300 cursor-pointer'
+                          }
+                          ${!isClickable ? 'cursor-not-allowed opacity-70' : ''}
+                          ${isClickable ? 'hover:shadow-lg' : ''}
+                        `}
+                        title={isActive ? 'المرحلة الحالية' : isCompleted ? 'مرحلة مكتملة - انقر للتغيير' : `انقر لنقل الطلب إلى: ${getStatusTitle(status)}`}
+                      >
+                        {/* Stage Icon */}
+                        <div className={`
+                          flex items-center justify-center mb-2
+                          ${isActive ? 'text-blue-600' : isCompleted ? 'text-blue-500' : 'text-gray-400'}
+                        `}>
+                          {isCompleted ? (
+                            <CheckCircleIcon className="h-6 w-6" />
+                          ) : isActive ? (
+                            <div className="h-6 w-6 rounded-full bg-blue-500 flex items-center justify-center">
+                              <div className="h-3 w-3 rounded-full bg-white" />
+                            </div>
+                          ) : (
+                            <div className="h-6 w-6 rounded-full border-2 border-gray-300 bg-white" />
+                          )}
+                        </div>
+                        
+                        {/* Stage Title */}
+                        <span className={`
+                          text-center leading-tight px-2
+                          ${isActive ? 'font-bold text-blue-700' : isCompleted ? 'font-semibold text-blue-600' : 'font-normal text-gray-500'}
+                        `}>
+                          {getStatusTitle(status)}
+                        </span>
+                      </button>
+                      
+                      {/* Connector Line with Arrow */}
+                      {index < statusOrder.length - 1 && (
+                        <div className="flex items-center mx-2">
+                          {/* Line before arrow */}
+                          <div className={`
+                            h-0.5 w-16
+                            ${isCompleted ? 'bg-blue-400' : 'bg-gray-300'}
+                          `} />
+                          {/* Arrow */}
+                          <div className={`
+                            flex items-center justify-center
+                            ${isCompleted ? 'text-blue-400' : 'text-gray-300'}
+                          `}>
+                            <ArrowRightIcon className="h-4 w-4" />
+                          </div>
+                          {/* Line after arrow */}
+                          <div className={`
+                            h-0.5 w-16
+                            ${isCompleted ? 'bg-blue-400' : 'bg-gray-300'}
+                          `} />
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
             </div>
           </div>
         </div>
