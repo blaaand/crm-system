@@ -1,2 +1,2 @@
-web: sh -c "npx prisma migrate deploy && npm run start:prod"
+web: sh -c "npx prisma migrate deploy && npm run seed:admin && npm run start:prod"
 

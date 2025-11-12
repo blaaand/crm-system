@@ -7,71 +7,98 @@ import { migrateClientFields } from './common/migrate-client-fields';
 import * as express from 'express';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule, {
-    bodyParser: false, // Disable default body parser to set custom limit
-  });
-
-  // Apply database migrations for new fields
-  try {
-    const prisma = app.get(PrismaService);
-    await migrateClientFields(prisma);
-  } catch (error) {
-    console.error('⚠️ Error applying migrations:', error);
-    // Continue anyway - fields might already exist
-  }
-
-  // Increase body size limit for large inventory files (50MB)
-  const expressApp = app.getHttpAdapter().getInstance();
-  expressApp.use(express.json({ limit: '50mb' }));
-  expressApp.use(express.urlencoded({ limit: '50mb', extended: true }));
-
-  // Set global prefix
-  app.setGlobalPrefix('api');
-
-  // Health check endpoint
-  app.getHttpAdapter().get('/api/health', (req, res) => {
-    res.status(200).json({ status: 'OK', message: 'Server is running' });
-  });
-
-  // Enable CORS
-  const allowedOrigins = process.env.CORS_ORIGIN 
-    ? process.env.CORS_ORIGIN.split(',').map(o => o.trim())
-    : ['http://localhost:5173', 'http://localhost:3001', 'http://127.0.0.1:5173'];
+  console.log('🚀 Starting CRM Backend Server...');
+  console.log(`📦 NODE_ENV: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`🔌 PORT: ${process.env.PORT || 8080}`);
+  console.log(`🔗 DATABASE_URL: ${process.env.DATABASE_URL ? '✅ Set' : '❌ Not set'}`);
   
-  app.enableCors({
-    origin: allowedOrigins,
-    credentials: true,
-  });
+  try {
+    const app = await NestFactory.create(AppModule, {
+      bodyParser: false, // Disable default body parser to set custom limit
+    });
+    console.log('✅ App module created successfully');
 
-  // Global validation pipe
-  app.useGlobalPipes(
-    new ValidationPipe({
-      whitelist: true,
-      forbidNonWhitelisted: true,
-      transform: true,
-    }),
-  );
+    // Apply database migrations for new fields
+    try {
+      console.log('🔄 Applying client fields migration...');
+      const prisma = app.get(PrismaService);
+      await migrateClientFields(prisma);
+      console.log('✅ Client fields migration completed');
+    } catch (error) {
+      console.error('⚠️ Error applying migrations:', error);
+      // Continue anyway - fields might already exist
+    }
 
-  // Swagger documentation
-  const config = new DocumentBuilder()
-    .setTitle('CRM System API')
-    .setDescription('نظام إدارة العملاء والطلبات مع لوحة Kanban')
-    .setVersion('1.0')
-    .addBearerAuth()
-    .build();
+    // Increase body size limit for large inventory files (50MB)
+    console.log('🔄 Setting up Express middleware...');
+    const expressApp = app.getHttpAdapter().getInstance();
+    expressApp.use(express.json({ limit: '50mb' }));
+    expressApp.use(express.urlencoded({ limit: '50mb', extended: true }));
+    console.log('✅ Express middleware configured');
 
-  const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api/docs', app, document, {
-    customSiteTitle: 'CRM API Documentation',
-  });
+    // Set global prefix
+    app.setGlobalPrefix('api');
+    console.log('✅ Global prefix set to /api');
+
+    // Health check endpoint
+    app.getHttpAdapter().get('/api/health', (req, res) => {
+      res.status(200).json({ status: 'OK', message: 'Server is running' });
+    });
+    console.log('✅ Health check endpoint configured at /api/health');
+
+    // Enable CORS
+    const allowedOrigins = process.env.CORS_ORIGIN 
+      ? process.env.CORS_ORIGIN.split(',').map(o => o.trim())
+      : ['http://localhost:5173', 'http://localhost:3001', 'http://127.0.0.1:5173'];
+    
+    console.log(`🌐 CORS origins: ${allowedOrigins.join(', ')}`);
+    app.enableCors({
+      origin: allowedOrigins,
+      credentials: true,
+    });
+    console.log('✅ CORS enabled');
+
+    // Global validation pipe
+    app.useGlobalPipes(
+      new ValidationPipe({
+        whitelist: true,
+        forbidNonWhitelisted: true,
+        transform: true,
+      }),
+    );
+    console.log('✅ Validation pipe configured');
+
+    // Swagger documentation
+    console.log('🔄 Setting up Swagger documentation...');
+    const config = new DocumentBuilder()
+      .setTitle('CRM System API')
+      .setDescription('نظام إدارة العملاء والطلبات مع لوحة Kanban')
+      .setVersion('1.0')
+      .addBearerAuth()
+      .build();
+
+    const document = SwaggerModule.createDocument(app, config);
+    SwaggerModule.setup('api/docs', app, document, {
+      customSiteTitle: 'CRM API Documentation',
+    });
+    console.log('✅ Swagger documentation configured at /api/docs');
 
   // Use consistent port
   const port = process.env.PORT || 8080;
-  await app.listen(port, '0.0.0.0');
-
-  console.log(`🚀 Application is running on: http://localhost:${port}`);
-  console.log(`📚 API Documentation: http://localhost:${port}/api/docs`);
+  
+  try {
+    await app.listen(port, '0.0.0.0');
+    console.log(`🚀 Application is running on: http://0.0.0.0:${port}`);
+    console.log(`📚 API Documentation: http://0.0.0.0:${port}/api/docs`);
+    console.log(`✅ Server started successfully on port ${port}`);
+  } catch (error) {
+    console.error('❌ Failed to start server:', error);
+    process.exit(1);
+  }
 }
 
-bootstrap();
+bootstrap().catch((error) => {
+  console.error('❌ Failed to bootstrap application:', error);
+  process.exit(1);
+});
 
