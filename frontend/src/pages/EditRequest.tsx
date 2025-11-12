@@ -736,7 +736,12 @@ export default function EditRequest() {
                     const priceWithPlateNoTax = (car + add + ship + reg + other) + plate
                     const supportPct = parseFloat(((watchedValues as any)?._supportPct || '0')) || 0
                     const supportAmount = priceWithPlateNoTax * 1.15 * (supportPct / 100)
-                    const expenses = reg + ship + plate + other + supportAmount
+                    // عمولة البائع: 300 للتقسيط، 200 للكاش
+                    const sellerCommission = request?.type === 'INSTALLMENT' ? 300 : 200
+                    // مصروفات البيع (بدون عمولة البائع)
+                    const expensesWithoutCommission = reg + ship + plate + other + supportAmount
+                    // مصروفات البيع (شاملة عمولة البائع)
+                    const expenses = expensesWithoutCommission + sellerCommission
                     const cost = parseFloat(((watchedValues as any)?._quickCost || '0')) || 0
                     const net = priceWithPlateNoTax - cost - expenses
                     const pct = priceWithPlateNoTax > 0 ? (net / priceWithPlateNoTax) * 100 : 0
@@ -750,14 +755,30 @@ export default function EditRequest() {
                           <label className="block text-sm font-semibold text-gray-800 mb-1">سعر التكلفة أو شراء السيارة</label>
                           <input className="input" type="number" step="0.01" value={(watchedValues as any)?._quickCost || ''} onChange={(e)=>setValue('_quickCost' as any, e.target.value)} placeholder="0.00" />
                         </div>
-                        <div>
-                          <label className="block text-sm font-semibold text-gray-800 mb-1">حسبة الدعم (%)</label>
-                          <input className="input" type="number" step="0.01" value={(watchedValues as any)?._supportPct || ''} onChange={(e)=>setValue('_supportPct' as any, e.target.value)} placeholder="أدخل النسبة" />
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <label className="block text-sm font-semibold text-gray-800 mb-1">حسبة الدعم (%)</label>
+                            <input className="input" type="number" step="0.01" value={(watchedValues as any)?._supportPct || ''} onChange={(e)=>setValue('_supportPct' as any, e.target.value)} placeholder="أدخل النسبة" />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-semibold text-gray-800 mb-1">مبلغ حسبة الدعم</label>
+                            <input className="input bg-gray-100" value={`${Math.round(supportAmount).toLocaleString()} ريال`} disabled />
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <label className="block text-xs font-medium text-gray-700 mb-1">مصروفات البيع</label>
+                            <input className="input bg-gray-100 text-sm" value={`${Math.round(expensesWithoutCommission).toLocaleString()} ريال`} disabled />
+                            <p className="mt-1 text-[10px] text-gray-500">التجيير + الشحن + اللوح + زيادة أخرى + حسبة الدعم</p>
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium text-gray-700 mb-1">عمولة البائع</label>
+                            <input className="input bg-gray-100 text-sm" value={`${sellerCommission.toLocaleString()} ريال`} disabled />
+                          </div>
                         </div>
                         <div>
-                          <label className="block text-sm font-semibold text-gray-800 mb-1">مصروفات البيع (تلقائي)</label>
+                          <label className="block text-sm font-semibold text-gray-800 mb-1">إجمالي مصروفات البيع (تلقائي)</label>
                           <input className="input bg-gray-100" value={`${Math.round(expenses).toLocaleString()} ريال`} disabled />
-                          <p className="mt-1 text-[11px] text-gray-600">تشمل: التجيير + الشحن + اللوح + زيادة أخرى + حسبة الدعم</p>
                         </div>
                           <div className="grid grid-cols-2 gap-3">
                         <div>

@@ -1261,7 +1261,12 @@ export default function NewRequest() {
                         const priceWithPlateNoTax = (car + add + ship + reg + other) + plate
                         const supportPct = parseFloat(((watchedValues as any)?._supportPct || '0')) || 0
                         const supportAmount = priceWithPlateNoTax * 1.15 * (supportPct / 100)
-                        const expenses = reg + ship + plate + other + supportAmount
+                        // عمولة البائع: 300 للتقسيط، 200 للكاش
+                        const sellerCommission = requestType === 'INSTALLMENT' ? 300 : 200
+                        // مصروفات البيع (بدون عمولة البائع)
+                        const expensesWithoutCommission = reg + ship + plate + other + supportAmount
+                        // مصروفات البيع (شاملة عمولة البائع)
+                        const expenses = expensesWithoutCommission + sellerCommission
                         const cost = parseFloat(((watchedValues as any)?._quickCost || '0')) || 0
                         const net = priceWithPlateNoTax - cost - expenses
                         const pct = priceWithPlateNoTax > 0 ? (net / priceWithPlateNoTax) * 100 : 0
@@ -1285,10 +1290,20 @@ export default function NewRequest() {
                                 <input className="input bg-gray-100" value={`${Math.round(supportAmount).toLocaleString()} ريال`} disabled />
                               </div>
                             </div>
+                            <div className="grid grid-cols-2 gap-3">
+                              <div>
+                                <label className="block text-xs font-medium text-gray-700 mb-1">مصروفات البيع</label>
+                                <input className="input bg-gray-100 text-sm" value={`${Math.round(expensesWithoutCommission).toLocaleString()} ريال`} disabled />
+                                <p className="mt-1 text-[10px] text-gray-500">التجيير + الشحن + اللوح + زيادة أخرى + حسبة الدعم</p>
+                              </div>
+                              <div>
+                                <label className="block text-xs font-medium text-gray-700 mb-1">عمولة البائع</label>
+                                <input className="input bg-gray-100 text-sm" value={`${sellerCommission.toLocaleString()} ريال`} disabled />
+                              </div>
+                            </div>
                             <div>
-                              <label className="block text-sm font-semibold text-gray-800 mb-1">مصروفات البيع (تلقائي)</label>
+                              <label className="block text-sm font-semibold text-gray-800 mb-1">إجمالي مصروفات البيع (تلقائي)</label>
                               <input className="input bg-gray-100" value={`${Math.round(expenses).toLocaleString()} ريال`} disabled />
-                              <p className="mt-1 text-[11px] text-gray-600">تشمل: التجيير + الشحن + اللوح + زيادة أخرى + حسبة الدعم</p>
                             </div>
                             <div className="grid grid-cols-2 gap-3">
                               <div>

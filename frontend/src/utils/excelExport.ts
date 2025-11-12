@@ -8,6 +8,7 @@ export interface EradData {
   supportPct?: number
   quickCost?: number
   vin?: string
+  sellerCommission?: number
 }
 
 declare global {
@@ -72,6 +73,11 @@ export async function generateEradExcel(data: EradData): Promise<Blob> {
   // Optional: VIN → I10
   if (data.vin) {
     setText('I10', data.vin)
+  }
+
+  // Optional: Seller commission → D31
+  if (data.sellerCommission !== undefined) {
+    setNumber('D31', Math.round(data.sellerCommission))
   }
 
   const blob = await workbook.outputAsync('blob')

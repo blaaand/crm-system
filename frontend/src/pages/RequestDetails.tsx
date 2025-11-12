@@ -806,7 +806,12 @@ export default function RequestDetails() {
                       const plateNumber = Number(request.installmentDetails.plateNumber || 0)
                       const priceWithPlateNoTax = carPrice + additionalFees + shipping + registration + otherAdditions + plateNumber
                       const supportAmount = priceWithPlateNoTax * 1.15 * (supportPct / 100)
-                      const expenses = registration + shipping + plateNumber + otherAdditions + supportAmount
+                      // عمولة البائع: 300 للتقسيط، 200 للكاش
+                      const sellerCommission = request.type === 'INSTALLMENT' ? 300 : 200
+                      // مصروفات البيع (بدون عمولة البائع)
+                      const expensesWithoutCommission = registration + shipping + plateNumber + otherAdditions + supportAmount
+                      // مصروفات البيع (شاملة عمولة البائع)
+                      const expenses = expensesWithoutCommission + sellerCommission
                       const net = priceWithPlateNoTax - quickCost - expenses
                       const pct = priceWithPlateNoTax > 0 ? (net / priceWithPlateNoTax) * 100 : 0
                       
@@ -826,8 +831,18 @@ export default function RequestDetails() {
                                 <span className="text-sm font-semibold text-yellow-900">{Number(quickCost).toLocaleString()} ريال</span>
                     </div>
                             )}
-                            <div className="flex justify-between items-center">
-                              <span className="text-xs text-yellow-700">مصروفات البيع</span>
+                            <div className="grid grid-cols-2 gap-2">
+                              <div className="flex justify-between items-center">
+                                <span className="text-[10px] text-yellow-600">مصروفات البيع</span>
+                                <span className="text-xs font-semibold text-yellow-800">{Math.round(expensesWithoutCommission).toLocaleString()} ريال</span>
+                              </div>
+                              <div className="flex justify-between items-center">
+                                <span className="text-[10px] text-yellow-600">عمولة البائع</span>
+                                <span className="text-xs font-semibold text-yellow-800">{sellerCommission.toLocaleString()} ريال</span>
+                              </div>
+                            </div>
+                            <div className="flex justify-between items-center border-t pt-1">
+                              <span className="text-xs text-yellow-700">إجمالي مصروفات البيع</span>
                               <span className="text-sm font-semibold text-yellow-900">{Math.round(expenses).toLocaleString()} ريال</span>
                             </div>
                             {(quickCost > 0 || expenses > 0) && (
@@ -1081,6 +1096,9 @@ export default function RequestDetails() {
             // Compute sale price and expenses based on type
             let sale = 0
             let expenses = 0
+            let expensesWithoutCommission = 0
+            // عمولة البائع: 300 للتقسيط، 200 للكاش
+            const sellerCommission = request.type === 'INSTALLMENT' ? 300 : 200
             if (request.type === 'INSTALLMENT' && request.installmentDetails) {
               const d = request.installmentDetails
               const car = Number(d.carPrice || 0)
@@ -1093,7 +1111,10 @@ export default function RequestDetails() {
               const subtotal = car + add + ship + reg + other
               sale = subtotal + plate
               const supportAmount = sale * 1.15 * ((parseFloat(supportPct || '0') || 0) / 100)
-              expenses = reg + ship + plate + other + supportAmount
+              // مصروفات البيع (بدون عمولة البائع)
+              expensesWithoutCommission = reg + ship + plate + other + supportAmount
+              // مصروفات البيع (شاملة عمولة البائع)
+              expenses = expensesWithoutCommission + sellerCommission
             } else if (request.type === 'CASH' && customFields) {
               const cf = customFields
               sale = Number(cf.totalWithPlateNoTax || 0)
@@ -1101,7 +1122,10 @@ export default function RequestDetails() {
               const plate = Number(cf.platePrice || 0)
               const other = Number(cf.additionalPrice || 0)
               const supportAmount = sale * 1.15 * ((parseFloat(supportPct || '0') || 0) / 100)
-              expenses = ship + plate + other + supportAmount
+              // مصروفات البيع (بدون عمولة البائع)
+              expensesWithoutCommission = ship + plate + other + supportAmount
+              // مصروفات البيع (شاملة عمولة البائع)
+              expenses = expensesWithoutCommission + sellerCommission
             }
             const cost = parseFloat(quickCost || '0') || 0
             const net = sale - cost - expenses
@@ -1122,10 +1146,20 @@ export default function RequestDetails() {
                     <label className="block text-sm font-semibold text-gray-800 mb-1">حسبة الدعم (%)</label>
                     <input className="input" type="number" step="0.01" value={supportPct} onChange={(e)=>setSupportPct(e.target.value)} placeholder="أدخل النسبة" />
                   </div>
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-800 mb-1">مصروفات البيع (تلقائي)</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">مصروفات البيع</label>
+                      <input className="input bg-gray-100 text-sm" value={`${Math.round(expensesWithoutCommission).toLocaleString()} ريال`} disabled />
+                      <p className="mt-1 text-[10px] text-gray-500">التجيير + الشحن + اللوح + زيادة أخرى + حسبة الدعم</p>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">عمولة البائع</label>
+                      <input className="input bg-gray-100 text-sm" value={`${sellerCommission.toLocaleString()} ريال`} disabled />
+                    </div>
+                  </div>
+                  <div className="sm:col-span-2">
+                    <label className="block text-sm font-semibold text-gray-800 mb-1">إجمالي مصروفات البيع (تلقائي)</label>
                     <input className="input bg-gray-100" value={`${Math.round(expenses).toLocaleString()} ريال`} disabled />
-                    <p className="mt-1 text-[11px] text-gray-600">تشمل: التجيير + الشحن + اللوح + زيادة أخرى + حسبة الدعم</p>
                   </div>
                   <div>
                     <label className="block text-sm font-semibold text-gray-800 mb-1">صافي الايراد (مبلغ)</label>
@@ -1495,6 +1529,9 @@ export default function RequestDetails() {
                         if (cf?.vin) vinVal = String(cf.vin)
                       }
 
+                      // عمولة البائع: 300 للتقسيط، 200 للكاش
+                      const sellerCommission = isCash ? 200 : 300
+
                       const blob = await generateEradExcel({
                         requestType: isCash ? 'CASH' : 'INSTALLMENT',
                         priceWithPlateNoTax,
@@ -1503,6 +1540,7 @@ export default function RequestDetails() {
                         supportPct: (supportPct || supportPct === '0') ? Number(supportPct) : supportPctNum,
                         quickCost: (quickCost || quickCost === '0') ? Number(quickCost) : quickCostNum,
                         vin: vinVal,
+                        sellerCommission: sellerCommission,
                       })
 
                       // Generate filename
