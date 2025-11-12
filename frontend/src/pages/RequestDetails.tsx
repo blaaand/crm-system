@@ -388,7 +388,6 @@ export default function RequestDetails() {
                   const currentStatusIndex = statusOrder.indexOf(request.currentStatus as RequestStatus)
                   const isActive = status === request.currentStatus
                   const isCompleted = currentStatusIndex > index
-                  const isPending = currentStatusIndex < index
                   const isClickable = !isActive && !moveRequestMutation.isLoading
                   
                   return (
