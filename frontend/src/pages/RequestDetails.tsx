@@ -770,7 +770,7 @@ export default function RequestDetails() {
                       request.installmentDetails.plateNumber) && (
                       <div className="border-2 border-green-200 rounded-lg p-4 bg-green-50">
                         <h4 className="text-sm font-bold text-green-900 mb-3">🚗 تفاصيل سعر السيارة</h4>
-                        <div className="space-y-2" style={{ display: 'none' }}>
+                        <div className="space-y-2">
                           {request.installmentDetails.carPrice && (
                             <div className="flex justify-between items-center">
                               <span className="text-xs text-green-700">سعر السيارة الأساسي</span>
