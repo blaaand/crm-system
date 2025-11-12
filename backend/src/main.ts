@@ -47,16 +47,74 @@ async function bootstrap() {
     console.log('✅ Health check endpoint configured at /api/health');
 
     // Enable CORS
-    const allowedOrigins = process.env.CORS_ORIGIN 
-      ? process.env.CORS_ORIGIN.split(',').map(o => o.trim())
-      : ['http://localhost:5173', 'http://localhost:3001', 'http://127.0.0.1:5173'];
+    const defaultOrigins = [
+      'http://localhost:5173',
+      'http://localhost:3001',
+      'http://127.0.0.1:5173',
+      'https://crm-system-gules.vercel.app',
+    ];
+    
+    let allowedOrigins = process.env.CORS_ORIGIN 
+      ? process.env.CORS_ORIGIN.split(',').map(o => o.trim()).filter(o => o)
+      : defaultOrigins;
+    
+    // Always add Vercel origin if not already included
+    if (!allowedOrigins.includes('https://crm-system-gules.vercel.app')) {
+      allowedOrigins.push('https://crm-system-gules.vercel.app');
+    }
+    
+    // Remove duplicates
+    allowedOrigins = [...new Set(allowedOrigins)];
     
     console.log(`🌐 CORS origins: ${allowedOrigins.join(', ')}`);
+    console.log(`🌐 CORS_ORIGIN env: ${process.env.CORS_ORIGIN || 'not set'}`);
+    
     app.enableCors({
-      origin: allowedOrigins,
+      origin: (origin, callback) => {
+        // Allow requests with no origin (like mobile apps, Postman, or curl requests)
+        if (!origin) {
+          console.log('✅ CORS: Allowing request with no origin');
+          return callback(null, true);
+        }
+        
+        // Check if origin is in allowed list
+        if (allowedOrigins.includes(origin)) {
+          console.log(`✅ CORS: Allowing origin: ${origin}`);
+          callback(null, true);
+        } else {
+          console.warn(`⚠️ CORS: Blocked origin: ${origin}`);
+          console.warn(`⚠️ CORS: Allowed origins: ${allowedOrigins.join(', ')}`);
+          // For development, allow all origins (remove in production)
+          if (process.env.NODE_ENV !== 'production') {
+            console.log(`⚠️ CORS: Allowing blocked origin in development mode`);
+            callback(null, true);
+          } else {
+            callback(new Error('Not allowed by CORS'));
+          }
+        }
+      },
       credentials: true,
+      methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS', 'HEAD'],
+      allowedHeaders: [
+        'Content-Type',
+        'Authorization',
+        'Accept',
+        'Origin',
+        'X-Requested-With',
+        'Access-Control-Allow-Origin',
+        'Access-Control-Allow-Headers',
+        'Access-Control-Allow-Methods',
+      ],
+      exposedHeaders: [
+        'Content-Type',
+        'Authorization',
+        'Access-Control-Allow-Origin',
+        'Access-Control-Allow-Credentials',
+      ],
+      preflightContinue: false,
+      optionsSuccessStatus: 204,
     });
-    console.log('✅ CORS enabled');
+    console.log('✅ CORS enabled with enhanced configuration');
 
     // Global validation pipe
     app.useGlobalPipes(
