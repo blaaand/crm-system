@@ -33,35 +33,62 @@ const statusOrder: RequestStatus[] = [
 ]
 
 const collisionDetectionStrategy: CollisionDetection = (args) => {
-  // First, try pointerWithin - if pointer is within a droppable, use it
+  // Get all collisions using pointerWithin first (most accurate)
   const pointerCollisions = pointerWithin(args)
+  
+  // Convert droppableContainers array to a map for easy lookup
+  const containersMap = new Map()
+  args.droppableContainers.forEach(container => {
+    containersMap.set(container.id, container)
+  })
+  
   if (pointerCollisions.length > 0) {
-    // Prioritize columns over cards
-    const columnCollisions = pointerCollisions.filter(collision => {
-      const data = collision.data?.current
-      return data?.type === 'column'
-    })
-    if (columnCollisions.length > 0) {
-      return columnCollisions
+    // Priority 1: Check if any collision is directly with a column
+    for (const collision of pointerCollisions) {
+      const container = containersMap.get(collision.id)
+      if (container?.data?.current?.type === 'column') {
+        return [collision]
+      }
+    }
+    // Priority 2: If collision is with a card, get its column
+    for (const collision of pointerCollisions) {
+      const container = containersMap.get(collision.id)
+      const containerId = container?.data?.current?.containerId
+      if (containerId && containersMap.has(containerId)) {
+        const columnContainer = containersMap.get(containerId)
+        if (columnContainer) {
+          return [{ id: containerId, data: columnContainer.data }]
+        }
+      }
     }
     return pointerCollisions
   }
 
-  // Second, try rectIntersection - if rectangles intersect, use it
+  // Fallback to rectIntersection
   const rectCollisions = rectIntersection(args)
   if (rectCollisions.length > 0) {
-    // Prioritize columns over cards
-    const columnCollisions = rectCollisions.filter(collision => {
-      const data = collision.data?.current
-      return data?.type === 'column'
-    })
-    if (columnCollisions.length > 0) {
-      return columnCollisions
+    // Priority 1: Check if any collision is directly with a column
+    for (const collision of rectCollisions) {
+      const container = containersMap.get(collision.id)
+      if (container?.data?.current?.type === 'column') {
+        return [collision]
+      }
+    }
+    // Priority 2: If collision is with a card, get its column
+    for (const collision of rectCollisions) {
+      const container = containersMap.get(collision.id)
+      const containerId = container?.data?.current?.containerId
+      if (containerId && containersMap.has(containerId)) {
+        const columnContainer = containersMap.get(containerId)
+        if (columnContainer) {
+          return [{ id: containerId, data: columnContainer.data }]
+        }
+      }
     }
     return rectCollisions
   }
 
-  // Finally, use closestCenter as fallback
+  // Final fallback
   return closestCenter(args)
 }
 
@@ -143,14 +170,11 @@ export default function KanbanBoard() {
       }
     }
 
-    // If we have a valid new status and it's different from current, move immediately
+    // If we have a valid new status and it's different from current, show modal
     if (newStatus && request.currentStatus !== newStatus) {
-      // Move immediately without showing modal
-      moveRequestMutation.mutate({ 
-        id: request.id, 
-        toStatus: newStatus,
-        comment: undefined // No comment for instant move
-      })
+      setSelectedRequest(request)
+      setTargetStatus(newStatus)
+      setMoveModalOpen(true)
     }
   }
 

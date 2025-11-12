@@ -1,5 +1,4 @@
-import { useSortable } from '@dnd-kit/sortable'
-import { CSS } from '@dnd-kit/utilities'
+import { useDraggable } from '@dnd-kit/core'
 import { useNavigate } from 'react-router-dom'
 import { Request, RequestType } from '../types'
 import { getRelativeTime, formatDate } from '../utils/dateUtils'
@@ -24,9 +23,8 @@ export default function RequestCard({ request, isDragging }: RequestCardProps) {
     listeners,
     setNodeRef,
     transform,
-    transition,
-    isDragging: isSortableDragging,
-  } = useSortable({ 
+    isDragging: isDraggableDragging,
+  } = useDraggable({ 
     id: request.id,
     data: {
       type: 'request-card',
@@ -35,10 +33,9 @@ export default function RequestCard({ request, isDragging }: RequestCardProps) {
     }
   })
 
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-  }
+  const style = transform ? {
+    transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
+  } : undefined
 
   const getTypeColor = (type: RequestType) => {
     switch (type) {
@@ -82,13 +79,13 @@ export default function RequestCard({ request, isDragging }: RequestCardProps) {
   return (
     <div
       ref={setNodeRef}
-      style={style}
       {...attributes}
       {...listeners}
       onClick={handleCardClick}
-      className={`bg-white rounded-xl shadow-md border-2 border-gray-200 p-5 cursor-pointer hover:shadow-xl hover:border-primary-300 transition-all duration-200 ${
-        isDragging || isSortableDragging ? 'opacity-50 scale-105 rotate-3' : ''
+      className={`bg-white rounded-xl shadow-md border-2 border-gray-200 p-5 cursor-move hover:shadow-xl hover:border-primary-300 transition-all duration-200 ${
+        isDragging || isDraggableDragging ? 'opacity-50 scale-105 rotate-3' : ''
       }`}
+      style={style}
     >
       <div className="card-content space-y-4">
         {/* Header */}

@@ -1,5 +1,4 @@
 import { useDroppable } from '@dnd-kit/core'
-import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { Request, RequestStatus } from '../types'
 import RequestCard from './RequestCard'
 
@@ -87,22 +86,17 @@ export default function KanbanColumn({ status, title, requests }: KanbanColumnPr
           }`}
           style={{ height: 'calc(100vh - 200px)' }}
         >
-          <SortableContext
-            items={requests.map((request) => request.id)}
-            strategy={verticalListSortingStrategy}
-          >
-            {requests.length === 0 ? (
-              <div className={`flex items-center justify-center h-32 text-gray-400 text-sm border-2 border-dashed rounded-lg transition-all duration-200 ${
-                isOver ? 'border-primary-400 bg-primary-50 text-primary-700 font-bold scale-105' : 'border-gray-300'
-              }`}>
-                {isOver ? '⬇️ اترك الكرت هنا' : 'اسحب الطلبات هنا'}
-              </div>
-            ) : (
-              requests.map((request) => (
-                <RequestCard key={request.id} request={request} />
-              ))
-            )}
-          </SortableContext>
+          {requests.length === 0 ? (
+            <div className={`flex items-center justify-center h-32 text-gray-400 text-sm border-2 border-dashed rounded-lg transition-all duration-200 ${
+              isOver ? 'border-primary-400 bg-primary-50 text-primary-700 font-bold scale-105' : 'border-gray-300'
+            }`}>
+              {isOver ? '⬇️ اترك الكرت هنا' : 'اسحب الطلبات هنا'}
+            </div>
+          ) : (
+            requests.map((request) => (
+              <RequestCard key={request.id} request={request} />
+            ))
+          )}
         </div>
       </div>
     </div>

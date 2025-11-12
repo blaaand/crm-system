@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom'
 import {
   DndContext,
   DragEndEvent,
+  DragOverEvent,
   DragOverlay,
   DragStartEvent,
   PointerSensor,
@@ -40,6 +41,7 @@ export default function Requests() {
   const [moveModalOpen, setMoveModalOpen] = useState(false)
   const [selectedRequest, setSelectedRequest] = useState<Request | null>(null)
   const [targetStatus, setTargetStatus] = useState<RequestStatus | null>(null)
+  const [currentOverStatus, setCurrentOverStatus] = useState<RequestStatus | null>(null)
   const queryClient = useQueryClient()
   const kanbanScrollRef = useRef<HTMLDivElement>(null)
 
@@ -51,37 +53,64 @@ export default function Requests() {
     })
   )
 
-  // Improved collision detection - prefers columns over cards
+  // Improved collision detection - prioritize columns, map cards to columns
   const collisionDetection: CollisionDetection = (args) => {
-    // First, try pointerWithin - if pointer is within a droppable, use it
+    // Get all collisions using pointerWithin first (most accurate)
     const pointerCollisions = pointerWithin(args)
+    
+    // Convert droppableContainers array to a map for easy lookup
+    const containersMap = new Map()
+    args.droppableContainers.forEach(container => {
+      containersMap.set(container.id, container)
+    })
+    
     if (pointerCollisions.length > 0) {
-      // Prioritize columns over cards
-      const columnCollisions = pointerCollisions.filter(collision => {
-        const data = collision.data?.current
-        return data?.type === 'column'
-      })
-      if (columnCollisions.length > 0) {
-        return columnCollisions
+      // Priority 1: Check if any collision is directly with a column
+      for (const collision of pointerCollisions) {
+        const container = containersMap.get(collision.id)
+        if (container?.data?.current?.type === 'column') {
+          return [collision]
+        }
+      }
+      // Priority 2: If collision is with a card, get its column
+      for (const collision of pointerCollisions) {
+        const container = containersMap.get(collision.id)
+        const containerId = container?.data?.current?.containerId
+        if (containerId && containersMap.has(containerId)) {
+          const columnContainer = containersMap.get(containerId)
+          if (columnContainer) {
+            return [{ id: containerId, data: columnContainer.data }]
+          }
+        }
       }
       return pointerCollisions
     }
 
-    // Second, try rectIntersection - if rectangles intersect, use it
+    // Fallback to rectIntersection
     const rectCollisions = rectIntersection(args)
     if (rectCollisions.length > 0) {
-      // Prioritize columns over cards
-      const columnCollisions = rectCollisions.filter(collision => {
-        const data = collision.data?.current
-        return data?.type === 'column'
-      })
-      if (columnCollisions.length > 0) {
-        return columnCollisions
+      // Priority 1: Check if any collision is directly with a column
+      for (const collision of rectCollisions) {
+        const container = containersMap.get(collision.id)
+        if (container?.data?.current?.type === 'column') {
+          return [collision]
+        }
+      }
+      // Priority 2: If collision is with a card, get its column
+      for (const collision of rectCollisions) {
+        const container = containersMap.get(collision.id)
+        const containerId = container?.data?.current?.containerId
+        if (containerId && containersMap.has(containerId)) {
+          const columnContainer = containersMap.get(containerId)
+          if (columnContainer) {
+            return [{ id: containerId, data: columnContainer.data }]
+          }
+        }
       }
       return rectCollisions
     }
 
-    // Finally, use closestCenter as fallback
+    // Final fallback
     return closestCenter(args)
   }
 
@@ -107,56 +136,99 @@ export default function Requests() {
     const { active } = event
     const request = findRequestById(active.id as string)
     setActiveRequest(request)
+    setCurrentOverStatus(null)
+  }
+
+  const handleDragOver = (event: DragOverEvent) => {
+    const { over } = event
+    if (!over) {
+      setCurrentOverStatus(null)
+      return
+    }
+
+    // Get data from the element being dragged over
+    const overData: any = over.data?.current
+
+    // Determine the current status being dragged over
+    let status: RequestStatus | null = null
+
+    // Priority 1: If over a column directly
+    if (overData?.type === 'column' && overData?.status) {
+      status = overData.status as RequestStatus
+    }
+    // Priority 2: If over.id is a RequestStatus (column)
+    else if (statusOrder.includes(over.id as RequestStatus)) {
+      status = over.id as RequestStatus
+    }
+    // Priority 3: If over a card, get its containerId
+    else if (overData?.type === 'request-card' && overData?.containerId) {
+      status = overData.containerId as RequestStatus
+    }
+    // Priority 4: Try to find the request and get its status
+    else {
+      const targetRequest = findRequestById(over.id as string)
+      if (targetRequest) {
+        status = targetRequest.currentStatus
+      }
+    }
+
+    setCurrentOverStatus(status)
   }
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event
     setActiveRequest(null)
 
-    if (!over) return
+    if (!over) {
+      setCurrentOverStatus(null)
+      return
+    }
 
     const request = findRequestById(active.id as string)
-    if (!request) return
+    if (!request) {
+      setCurrentOverStatus(null)
+      return
+    }
 
-    // Determine the target status
-    let newStatus: RequestStatus | null = null
+    // Determine the target status - use currentOverStatus if available, otherwise try to determine from over
+    let newStatus: RequestStatus | null = currentOverStatus
 
-    // Get data from the dropped element
-    const overData: any = over.data?.current
+    // If currentOverStatus is not set, try to determine from over
+    if (!newStatus) {
+      const overData: any = over.data?.current
 
-    // Priority 1: If dropped directly on a column
-    if (overData?.type === 'column' && overData?.status) {
-      newStatus = overData.status as RequestStatus
-    }
-    // Priority 2: If over.id is a RequestStatus (column), use it directly
-    else if (statusOrder.includes(over.id as RequestStatus)) {
-      newStatus = over.id as RequestStatus
-    }
-    // Priority 3: If dropped over a card, get its containerId
-    else if (overData?.type === 'request-card' && overData?.containerId) {
-      newStatus = overData.containerId as RequestStatus
-    }
-    // Priority 4: Try to get containerId from sortable data
-    else if (overData?.sortable?.containerId) {
-      newStatus = overData.sortable.containerId as RequestStatus
-    }
-    // Priority 5: Search for the request in kanbanData to find its column
-    else {
-      // Find which column contains this request ID
-      const targetRequest = findRequestById(over.id as string)
-      if (targetRequest) {
-        newStatus = targetRequest.currentStatus
+      // Priority 1: If dropped directly on a column
+      if (overData?.type === 'column' && overData?.status) {
+        newStatus = overData.status as RequestStatus
+      }
+      // Priority 2: If over.id is a RequestStatus (column), use it directly
+      else if (statusOrder.includes(over.id as RequestStatus)) {
+        newStatus = over.id as RequestStatus
+      }
+      // Priority 3: If dropped over a card, get its containerId
+      else if (overData?.type === 'request-card' && overData?.containerId) {
+        newStatus = overData.containerId as RequestStatus
+      }
+      // Priority 4: Try to get containerId from sortable data
+      else if (overData?.sortable?.containerId) {
+        newStatus = overData.sortable.containerId as RequestStatus
+      }
+      // Priority 5: Search for the request in kanbanData to find its column
+      else {
+        const targetRequest = findRequestById(over.id as string)
+        if (targetRequest) {
+          newStatus = targetRequest.currentStatus
+        }
       }
     }
 
-    // If we have a valid new status and it's different from current, move immediately
+    setCurrentOverStatus(null)
+
+    // If we have a valid new status and it's different from current, show modal
     if (newStatus && request.currentStatus !== newStatus) {
-      // Move immediately without showing modal
-      moveRequestMutation.mutate({ 
-        id: request.id, 
-        toStatus: newStatus,
-        comment: undefined // No comment for instant move
-      })
+      setSelectedRequest(request)
+      setTargetStatus(newStatus)
+      setMoveModalOpen(true)
     }
   }
 
@@ -356,6 +428,7 @@ export default function Requests() {
             sensors={sensors}
             collisionDetection={collisionDetection}
             onDragStart={handleDragStart}
+            onDragOver={handleDragOver}
             onDragEnd={handleDragEnd}
           >
             <div ref={kanbanScrollRef} className="flex gap-6 overflow-x-auto pb-8 pt-6 px-8 bg-gradient-to-br from-gray-50 to-gray-100 min-h-screen">
