@@ -723,7 +723,7 @@ export default function RequestDetails() {
                       request.installmentDetails.plateNumber) && (
                       <div className="border-2 border-green-200 rounded-lg p-4 bg-green-50">
                         <h4 className="text-sm font-bold text-green-900 mb-3">🚗 تفاصيل سعر السيارة</h4>
-                        <div className="space-y-2">
+                        <div className="space-y-2" style={{ display: 'none' }}>
                           {request.installmentDetails.carPrice && (
                             <div className="flex justify-between items-center">
                               <span className="text-xs text-green-700">سعر السيارة الأساسي</span>
@@ -790,8 +790,8 @@ export default function RequestDetails() {
                             )
                           })()}
                         </div>
-                        </div>
-                      )}
+                      </div>
+                    )}
 
                     {/* تحليل ايراد سريع */}
                     {(() => {
@@ -909,7 +909,7 @@ export default function RequestDetails() {
               </div>
 
               {/* معادلات التمويل */}
-              <div className="card">
+              <div className="card" style={{ display: 'none' }}>
                 <div className="card-header bg-gradient-to-r from-purple-50 to-indigo-50">
                   <div className="flex items-center gap-2">
                     <BuildingLibraryIcon className="h-5 w-5 text-purple-600" />

@@ -20,6 +20,7 @@ import { Roles } from '../auth/decorators/roles.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { UserRole } from '../common/enums/user-role.enum';
 import { BulkCreateClientsDto } from './dto/bulk-create-clients.dto';
+import { CreateCommentDto } from '../requests/dto/create-comment.dto';
 
 @ApiTags('Clients')
 @Controller('clients')
@@ -102,5 +103,17 @@ export class ClientsController {
     @CurrentUser() user: any,
   ) {
     return this.clientsService.remove(id, user.role, user.id);
+  }
+
+  @Post(':id/comments')
+  @ApiOperation({ summary: 'إضافة تعليق إلى العميل' })
+  @ApiResponse({ status: 201, description: 'تم إضافة التعليق بنجاح' })
+  @ApiResponse({ status: 404, description: 'العميل غير موجود' })
+  async addComment(
+    @Param('id') id: string,
+    @Body() createCommentDto: CreateCommentDto,
+    @CurrentUser() user: any,
+  ) {
+    return this.clientsService.addComment(id, createCommentDto.text, user.id);
   }
 }

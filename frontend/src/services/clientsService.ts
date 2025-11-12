@@ -56,4 +56,9 @@ export const clientsService = {
     const response = await api.post('/clients/bulk', data)
     return response.data
   },
+
+  async addComment(clientId: string, text: string): Promise<any> {
+    const response = await api.post(`/clients/${clientId}/comments`, { text })
+    return response.data
+  },
 }

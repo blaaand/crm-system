@@ -387,6 +387,50 @@ export class ClientsService {
     return updatedClient;
   }
 
+  async addComment(clientId: string, text: string, userId: string) {
+    // Verify client exists
+    const client = await this.prisma.client.findUnique({
+      where: { id: clientId },
+    });
+
+    if (!client) {
+      throw new NotFoundException('العميل غير موجود');
+    }
+
+    // Create comment and update client updatedAt in a transaction
+    const result = await this.prisma.$transaction(async (tx) => {
+      // Create comment
+      const comment = await tx.comment.create({
+        data: {
+          clientId,
+          userId,
+          text,
+        },
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
+        },
+      });
+
+      // Update client updatedAt to reflect the comment addition
+      await tx.client.update({
+        where: { id: clientId },
+        data: {
+          updatedAt: new Date(),
+        },
+      });
+
+      return comment;
+    });
+
+    return result;
+  }
+
   async remove(id: string, userRole: UserRole, userId: string) {
     const client = await this.prisma.client.findUnique({
       where: { id },

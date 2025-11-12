@@ -64,6 +64,7 @@ export interface Client {
   createdAt: string
   updatedAt: string
   createdBy?: User
+  comments?: Comment[]
   _count?: {
     requests: number
     attachments: number

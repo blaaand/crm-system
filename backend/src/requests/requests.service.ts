@@ -87,6 +87,14 @@ export class RequestsService {
         },
       });
 
+      // Update client updatedAt when a request is created
+      await tx.client.update({
+        where: { id: clientId },
+        data: {
+          updatedAt: new Date(),
+        },
+      });
+
       return request;
     });
 
@@ -470,8 +478,20 @@ export class RequestsService {
       throw new ForbiddenException('ليس لديك صلاحية لحذف هذا الطلب');
     }
 
+    // Get client ID before deleting request
+    const clientId = request.clientId;
+
+    // Delete request
     await this.prisma.request.delete({
       where: { id },
+    });
+
+    // Update client updatedAt when a request is deleted
+    await this.prisma.client.update({
+      where: { id: clientId },
+      data: {
+        updatedAt: new Date(),
+      },
     });
 
     return { message: 'تم حذف الطلب بنجاح' };
