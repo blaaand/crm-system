@@ -4,6 +4,7 @@ import {
   CollisionDetection,
   DndContext,
   DragEndEvent,
+  DragOverEvent,
   DragOverlay,
   DragStartEvent,
   PointerSensor,
@@ -97,6 +98,7 @@ export default function KanbanBoard() {
   const [moveModalOpen, setMoveModalOpen] = useState(false)
   const [selectedRequest, setSelectedRequest] = useState<Request | null>(null)
   const [targetStatus, setTargetStatus] = useState<RequestStatus | null>(null)
+  const [currentOverStatus, setCurrentOverStatus] = useState<RequestStatus | null>(null)
   const queryClient = useQueryClient()
 
   const sensors = useSensors(
@@ -120,6 +122,7 @@ export default function KanbanBoard() {
         queryClient.invalidateQueries('kanbanData')
         setMoveModalOpen(false)
         setSelectedRequest(null)
+        setTargetStatus(null)
       },
     }
   )
