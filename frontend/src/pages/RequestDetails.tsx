@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from 'react-query'
 import { requestsService } from '../services/requestsService'
 import { banksService } from '../services/banksService'
 import { formatDateTime, getRelativeTime } from '../utils/dateUtils'
+import { RequestStatus } from '../types'
 import { 
   ArrowLeftIcon, 
   ClockIcon,
@@ -20,6 +21,8 @@ import {
   LinkIcon,
   XCircleIcon,
   MagnifyingGlassIcon,
+  PaperAirplaneIcon,
+  CheckCircleIcon,
 } from '@heroicons/react/24/outline'
 import { RajhiFinancingCalculator } from '../components/RajhiFinancingCalculator'
 import toast from 'react-hot-toast'
@@ -27,6 +30,7 @@ import { attachmentsService } from '../services/attachmentsService'
 import { generateEradExcel, generateOfferExcel, generateCarHandoverExcel } from '../utils/excelExport'
 import { inventoryService } from '../services/inventoryService'
 import { useQuery as useInventoryQuery } from 'react-query'
+import MoveRequestModal from '../components/MoveRequestModal'
 
 export default function RequestDetails() {
   const { id } = useParams<{ id: string }>()
@@ -52,6 +56,10 @@ export default function RequestDetails() {
     carCategory: '',
     plateNumber: '',
   })
+  const [commentText, setCommentText] = useState('')
+  const [showMoveModal, setShowMoveModal] = useState(false)
+  const [targetStatus, setTargetStatus] = useState<RequestStatus | null>(null)
+  const [moveComment, setMoveComment] = useState('')
 
   const installmentSummaryRef = useRef<HTMLDivElement | null>(null)
   const installmentSummaryTextRef = useRef<string>('')
@@ -265,6 +273,40 @@ export default function RequestDetails() {
     }
   )
 
+  // Add comment mutation
+  const addCommentMutation = useMutation(
+    (text: string) => requestsService.addComment(id!, text),
+    {
+      onSuccess: () => {
+        toast.success('تم إضافة التعليق بنجاح')
+        setCommentText('')
+        queryClient.invalidateQueries(['request', id])
+      },
+      onError: (error: any) => {
+        toast.error(error?.response?.data?.message || 'تعذر إضافة التعليق')
+      },
+    }
+  )
+
+  // Move request mutation
+  const moveRequestMutation = useMutation(
+    ({ toStatus, comment }: { toStatus: RequestStatus, comment?: string }) => 
+      requestsService.moveRequest(id!, { toStatus, comment }),
+    {
+      onSuccess: () => {
+        toast.success('تم نقل الطلب بنجاح')
+        setShowMoveModal(false)
+        setTargetStatus(null)
+        setMoveComment('')
+        queryClient.invalidateQueries(['request', id])
+        queryClient.invalidateQueries('kanbanData')
+      },
+      onError: (error: any) => {
+        toast.error(error?.response?.data?.message || 'تعذر نقل الطلب')
+      },
+    }
+  )
+
   if (isLoading) {
     return <div className="text-center py-8">جاري التحميل...</div>
   }
@@ -304,6 +346,28 @@ export default function RequestDetails() {
     return titles[status] || status
   }
 
+  // Define status order for the navigation bar
+  const statusOrder: RequestStatus[] = [
+    RequestStatus.AWAITING_CLIENT,
+    RequestStatus.FOLLOW_UP,
+    RequestStatus.AWAITING_DOCS,
+    RequestStatus.AWAITING_BANK_REP,
+    RequestStatus.SOLD,
+    RequestStatus.NOT_SOLD,
+  ]
+
+  const handleStageClick = (status: RequestStatus) => {
+    if (status === request.currentStatus) return
+    setTargetStatus(status)
+    setShowMoveModal(true)
+  }
+
+  const handleMoveRequest = (comment?: string) => {
+    if (targetStatus) {
+      moveRequestMutation.mutate({ toStatus: targetStatus, comment })
+    }
+  }
+
   return (
     <div>
       <div className="mb-6">
@@ -315,6 +379,49 @@ export default function RequestDetails() {
           العودة للطلبات
         </Link>
       </div>
+
+      {/* Stage Navigation Bar */}
+      {request && (
+        <div className="mb-6 card">
+          <div className="card-body p-4">
+            <h3 className="text-sm font-bold text-gray-700 mb-4">مراحل الطلب</h3>
+            <div className="flex flex-wrap items-center gap-2">
+              {statusOrder.map((status, index) => {
+                const isActive = status === request.currentStatus
+                const isPast = statusOrder.indexOf(request.currentStatus as RequestStatus) > index
+                const isClickable = !isActive
+                
+                return (
+                  <div key={status} className="flex items-center">
+                    <button
+                      onClick={() => handleStageClick(status)}
+                      disabled={!isClickable || moveRequestMutation.isLoading}
+                      className={`
+                        px-4 py-2 rounded-lg text-sm font-bold transition-all duration-200
+                        ${isActive 
+                          ? 'bg-blue-600 text-white shadow-lg ring-2 ring-blue-300 ring-offset-2' 
+                          : isPast
+                          ? 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                          : 'bg-gray-100 text-gray-500 hover:bg-gray-200 hover:text-gray-700'
+                        }
+                        ${isClickable && !moveRequestMutation.isLoading ? 'cursor-pointer' : 'cursor-not-allowed'}
+                        ${!isActive && isClickable ? 'hover:scale-105' : ''}
+                      `}
+                      title={isActive ? 'المرحلة الحالية' : `انقر لنقل الطلب إلى: ${getStatusTitle(status)}`}
+                    >
+                      {isActive && <CheckCircleIcon className="inline-block h-4 w-4 ml-1" />}
+                      {getStatusTitle(status)}
+                    </button>
+                    {index < statusOrder.length - 1 && (
+                      <ArrowRightIcon className={`h-5 w-5 mx-2 ${isPast ? 'text-gray-400' : 'text-gray-300'}`} />
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
@@ -1036,111 +1143,232 @@ export default function RequestDetails() {
             )
           })()}
 
-          {/* سجل التحديثات والأحداث */}
+          {/* إضافة تعليق */}
+          <div className="card">
+            <div className="card-header bg-gradient-to-r from-green-50 to-emerald-50">
+              <h3 className="text-lg font-medium text-gray-900 flex items-center gap-2">
+                <ChatBubbleLeftIcon className="h-5 w-5 text-green-600" />
+                إضافة تعليق
+              </h3>
+            </div>
+            <div className="card-body">
+              <div className="space-y-4">
+                <div>
+                  <textarea
+                    value={commentText}
+                    onChange={(e) => setCommentText(e.target.value)}
+                    placeholder="اكتب تعليقك هنا..."
+                    rows={3}
+                    className="input w-full"
+                  />
+                </div>
+                <div className="flex justify-end">
+                  <button
+                    onClick={() => {
+                      if (commentText.trim()) {
+                        addCommentMutation.mutate(commentText.trim())
+                      } else {
+                        toast.error('يرجى إدخال نص التعليق')
+                      }
+                    }}
+                    disabled={addCommentMutation.isLoading || !commentText.trim()}
+                    className="btn-primary flex items-center gap-2"
+                  >
+                    <PaperAirplaneIcon className="h-4 w-4" />
+                    {addCommentMutation.isLoading ? 'جاري الإضافة...' : 'إضافة التعليق'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* التعليقات والأحداث */}
           <div className="card">
             <div className="card-header flex items-center gap-2">
               <ClockIcon className="h-5 w-5 text-gray-600" />
               <h3 className="text-lg font-medium text-gray-900">
-                سجل التحديثات ({request.events?.length || 0})
+                التعليقات والأحداث ({((request.comments?.length || 0) + (request.events?.length || 0))})
               </h3>
             </div>
             <div className="card-body">
-              {!request.events || request.events.length === 0 ? (
-                <div className="text-center py-8 text-gray-500">
-                  لا توجد تحديثات
-                </div>
-              ) : (
-                <div className="flow-root">
-                  <ul className="-mb-8">
-                    {request.events.map((event, idx) => (
-                      <li key={event.id}>
-                        <div className="relative pb-8">
-                          {idx !== request.events!.length - 1 && (
-                            <span
-                              className="absolute top-8 right-4 -ml-px h-full w-0.5 bg-gray-300"
-                              aria-hidden="true"
-                            />
-                          )}
-                          <div className="relative flex items-start space-x-3">
-                            <div className="relative">
-                              <div className={`h-10 w-10 rounded-full flex items-center justify-center ring-4 ring-white ${
-                                event.toStatus === 'SOLD' ? 'bg-green-500' :
-                                event.toStatus === 'NOT_SOLD' ? 'bg-gray-500' :
-                                'bg-blue-500'
-                              }`}>
-                                <ArrowRightIcon className="h-5 w-5 text-white" />
-                              </div>
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg p-4 border-2 border-gray-200 shadow-sm hover:shadow-md transition-shadow">
-                                <div className="flex items-start justify-between mb-2">
-                                  <div>
-                                    <p className="text-sm font-bold text-gray-900">
-                                      {event.fromStatus ? (
-                                        <>
-                                          من: <span className={`px-2 py-0.5 rounded ${getStatusColor(event.fromStatus)}`}>
-                                            {getStatusTitle(event.fromStatus)}
-                                          </span>
-                                          {' → '}
-                                          إلى: <span className={`px-2 py-0.5 rounded ${getStatusColor(event.toStatus)}`}>
-                                            {getStatusTitle(event.toStatus)}
-                                          </span>
-                                        </>
-                                      ) : (
-                                        <>
-                                          تم إنشاء الطلب في حالة: <span className={`px-2 py-0.5 rounded ${getStatusColor(event.toStatus)}`}>
-                                            {getStatusTitle(event.toStatus)}
-                                          </span>
-                                        </>
-                                      )}
-                                    </p>
-                                  </div>
-                                </div>
-                                
-                                {/* الوقت الدقيق والنسبي */}
-                                <div className="flex items-center gap-4 mt-3 pt-3 border-t border-gray-300">
-                                  <div className="flex items-center gap-2">
-                                    <ClockIcon className="h-4 w-4 text-gray-500" />
-                                    <span className="text-xs font-medium text-gray-600">
-                                      {formatDateTime(event.createdAt)}
-                                    </span>
-                                  </div>
-                                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-bold bg-indigo-100 text-indigo-700">
-                                    {getRelativeTime(event.createdAt)}
-                                  </span>
-                                </div>
+              {(() => {
+                // Combine comments and events and sort by date
+                const allItems: Array<{
+                  id: string
+                  type: 'comment' | 'event'
+                  createdAt: string
+                  data: any
+                }> = []
 
-                                {/* التعليق/الـ Feedback */}
-                                {event.comment && (
-                                  <div className="mt-3 bg-amber-50 border-2 border-amber-300 rounded-lg p-3">
-                                    <div className="flex items-start gap-2">
-                                      <ChatBubbleLeftIcon className="h-5 w-5 text-amber-600 flex-shrink-0" />
+                // Add comments
+                if (request.comments && request.comments.length > 0) {
+                  request.comments.forEach((comment) => {
+                    allItems.push({
+                      id: comment.id,
+                      type: 'comment',
+                      createdAt: comment.createdAt,
+                      data: comment,
+                    })
+                  })
+                }
+
+                // Add events
+                if (request.events && request.events.length > 0) {
+                  request.events.forEach((event) => {
+                    allItems.push({
+                      id: event.id,
+                      type: 'event',
+                      createdAt: event.createdAt,
+                      data: event,
+                    })
+                  })
+                }
+
+                // Sort by date (newest first)
+                allItems.sort((a, b) => {
+                  return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+                })
+
+                if (allItems.length === 0) {
+                  return (
+                    <div className="text-center py-8 text-gray-500">
+                      لا توجد تعليقات أو أحداث
+                    </div>
+                  )
+                }
+
+                return (
+                  <div className="flow-root">
+                    <ul className="-mb-8">
+                      {allItems.map((item, idx) => (
+                        <li key={item.id}>
+                          <div className="relative pb-8">
+                            {idx !== allItems.length - 1 && (
+                              <span
+                                className="absolute top-8 right-4 -ml-px h-full w-0.5 bg-gray-300"
+                                aria-hidden="true"
+                              />
+                            )}
+                            <div className="relative flex items-start space-x-3">
+                              <div className="relative">
+                                {item.type === 'comment' ? (
+                                  <div className="h-10 w-10 rounded-full flex items-center justify-center ring-4 ring-white bg-green-500">
+                                    <ChatBubbleLeftIcon className="h-5 w-5 text-white" />
+                                  </div>
+                                ) : (
+                                  <div className={`h-10 w-10 rounded-full flex items-center justify-center ring-4 ring-white ${
+                                    item.data.toStatus === 'SOLD' ? 'bg-green-500' :
+                                    item.data.toStatus === 'NOT_SOLD' ? 'bg-gray-500' :
+                                    'bg-blue-500'
+                                  }`}>
+                                    <ArrowRightIcon className="h-5 w-5 text-white" />
+                                  </div>
+                                )}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                {item.type === 'comment' ? (
+                                  // Comment display
+                                  <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-lg p-4 border-2 border-green-200 shadow-sm hover:shadow-md transition-shadow">
+                                    <div className="flex items-start justify-between mb-2">
+                                      <div className="flex items-center gap-2">
+                                        <ChatBubbleLeftIcon className="h-4 w-4 text-green-600" />
+                                        <p className="text-sm font-bold text-green-900">تعليق</p>
+                                      </div>
+                                    </div>
+                                    <p className="text-sm text-gray-900 font-medium leading-relaxed mb-3">
+                                      {item.data.text}
+                                    </p>
+                                    <div className="flex items-center gap-4 mt-3 pt-3 border-t border-green-200">
+                                      <div className="flex items-center gap-2">
+                                        <ClockIcon className="h-4 w-4 text-gray-500" />
+                                        <span className="text-xs font-medium text-gray-600">
+                                          {formatDateTime(item.data.createdAt)}
+                                        </span>
+                                      </div>
+                                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-bold bg-green-100 text-green-700">
+                                        {getRelativeTime(item.data.createdAt)}
+                                      </span>
+                                    </div>
+                                    {item.data.user && (
+                                      <div className="mt-2 flex items-center gap-2 text-xs text-gray-500">
+                                        <UserIcon className="h-4 w-4" />
+                                        <span>بواسطة: {item.data.user.name}</span>
+                                      </div>
+                                    )}
+                                  </div>
+                                ) : (
+                                  // Event display
+                                  <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg p-4 border-2 border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+                                    <div className="flex items-start justify-between mb-2">
                                       <div>
-                                        <p className="text-xs font-bold text-amber-800 mb-1">التعليق:</p>
-                                        <p className="text-sm text-amber-900 font-medium leading-relaxed">
-                                          {event.comment}
+                                        <p className="text-sm font-bold text-gray-900">
+                                          {item.data.fromStatus ? (
+                                            <>
+                                              من: <span className={`px-2 py-0.5 rounded ${getStatusColor(item.data.fromStatus)}`}>
+                                                {getStatusTitle(item.data.fromStatus)}
+                                              </span>
+                                              {' → '}
+                                              إلى: <span className={`px-2 py-0.5 rounded ${getStatusColor(item.data.toStatus)}`}>
+                                                {getStatusTitle(item.data.toStatus)}
+                                              </span>
+                                            </>
+                                          ) : (
+                                            <>
+                                              تم إنشاء الطلب في حالة: <span className={`px-2 py-0.5 rounded ${getStatusColor(item.data.toStatus)}`}>
+                                                {getStatusTitle(item.data.toStatus)}
+                                              </span>
+                                            </>
+                                          )}
                                         </p>
                                       </div>
                                     </div>
-                                  </div>
-                                )}
+                                    
+                                    {/* الوقت الدقيق والنسبي */}
+                                    <div className="flex items-center gap-4 mt-3 pt-3 border-t border-gray-300">
+                                      <div className="flex items-center gap-2">
+                                        <ClockIcon className="h-4 w-4 text-gray-500" />
+                                        <span className="text-xs font-medium text-gray-600">
+                                          {formatDateTime(item.data.createdAt)}
+                                        </span>
+                                      </div>
+                                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-bold bg-indigo-100 text-indigo-700">
+                                        {getRelativeTime(item.data.createdAt)}
+                                      </span>
+                                    </div>
 
-                                {/* من قام بالتحديث */}
-                                {event.changedBy && (
-                                  <div className="mt-3 flex items-center gap-2 text-xs text-gray-500">
-                                    <UserIcon className="h-4 w-4" />
-                                    <span>بواسطة: {event.changedBy.name}</span>
+                                    {/* التعليق/الـ Feedback */}
+                                    {item.data.comment && (
+                                      <div className="mt-3 bg-amber-50 border-2 border-amber-300 rounded-lg p-3">
+                                        <div className="flex items-start gap-2">
+                                          <ChatBubbleLeftIcon className="h-5 w-5 text-amber-600 flex-shrink-0" />
+                                          <div>
+                                            <p className="text-xs font-bold text-amber-800 mb-1">التعليق:</p>
+                                            <p className="text-sm text-amber-900 font-medium leading-relaxed">
+                                              {item.data.comment}
+                                            </p>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    )}
+
+                                    {/* من قام بالتحديث */}
+                                    {item.data.changedBy && (
+                                      <div className="mt-3 flex items-center gap-2 text-xs text-gray-500">
+                                        <UserIcon className="h-4 w-4" />
+                                        <span>بواسطة: {item.data.changedBy.name}</span>
+                                      </div>
+                                    )}
                                   </div>
                                 )}
                               </div>
                             </div>
                           </div>
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )
+              })()}
             </div>
           </div>
         </div>
@@ -1992,6 +2220,24 @@ export default function RequestDetails() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Move Request Modal */}
+      {showMoveModal && request && targetStatus && (
+        <MoveRequestModal
+          isOpen={showMoveModal}
+          onClose={() => {
+            setShowMoveModal(false)
+            setTargetStatus(null)
+            setMoveComment('')
+          }}
+          request={request}
+          onMove={(comment) => {
+            handleMoveRequest(comment)
+          }}
+          isLoading={moveRequestMutation.isLoading}
+          targetStatus={targetStatus}
+        />
       )}
 
       {/* Handover Receipt Modal */}

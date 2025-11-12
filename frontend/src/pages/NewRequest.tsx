@@ -1275,9 +1275,15 @@ export default function NewRequest() {
                               <label className="block text-sm font-semibold text-gray-800 mb-1">سعر التكلفة أو شراء السيارة</label>
                               <input className="input" type="number" step="0.01" value={(watchedValues as any)?._quickCost || ''} onChange={(e)=>setValue('_quickCost' as any, e.target.value)} placeholder="0.00" />
                             </div>
-                            <div>
-                              <label className="block text-sm font-semibold text-gray-800 mb-1">حسبة الدعم (%)</label>
-                              <input className="input" type="number" step="0.01" value={(watchedValues as any)?._supportPct || ''} onChange={(e)=>setValue('_supportPct' as any, e.target.value)} placeholder="أدخل النسبة" />
+                            <div className="grid grid-cols-2 gap-3">
+                              <div>
+                                <label className="block text-sm font-semibold text-gray-800 mb-1">حسبة الدعم (%)</label>
+                                <input className="input" type="number" step="0.01" value={(watchedValues as any)?._supportPct || ''} onChange={(e)=>setValue('_supportPct' as any, e.target.value)} placeholder="أدخل النسبة" />
+                              </div>
+                              <div>
+                                <label className="block text-sm font-semibold text-gray-800 mb-1">مبلغ حسبة الدعم</label>
+                                <input className="input bg-gray-100" value={`${Math.round(supportAmount).toLocaleString()} ريال`} disabled />
+                              </div>
                             </div>
                             <div>
                               <label className="block text-sm font-semibold text-gray-800 mb-1">مصروفات البيع (تلقائي)</label>

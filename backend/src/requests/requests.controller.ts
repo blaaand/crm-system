@@ -15,6 +15,7 @@ import { CreateRequestDto } from './dto/create-request.dto';
 import { UpdateRequestDto } from './dto/update-request.dto';
 import { MoveRequestDto } from './dto/move-request.dto';
 import { RequestQueryDto } from './dto/request-query.dto';
+import { CreateCommentDto } from './dto/create-comment.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -113,5 +114,17 @@ export class RequestsController {
     @CurrentUser() user: any,
   ) {
     return this.requestsService.remove(id, user.id, user.role);
+  }
+
+  @Post(':id/comments')
+  @ApiOperation({ summary: 'إضافة تعليق إلى الطلب' })
+  @ApiResponse({ status: 201, description: 'تم إضافة التعليق بنجاح' })
+  @ApiResponse({ status: 404, description: 'الطلب غير موجود' })
+  async addComment(
+    @Param('id') id: string,
+    @Body() createCommentDto: CreateCommentDto,
+    @CurrentUser() user: any,
+  ) {
+    return this.requestsService.addComment(id, createCommentDto.text, user.id);
   }
 }

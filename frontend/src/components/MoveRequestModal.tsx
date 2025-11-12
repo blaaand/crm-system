@@ -9,6 +9,17 @@ interface MoveRequestModalProps {
   request: Request | null
   onMove: (comment?: string) => void
   isLoading: boolean
+  targetStatus?: string
+}
+
+const statusTitles: Record<string, string> = {
+  'NOT_ANSWERED': 'عميل لم يتم الرد',
+  'AWAITING_CLIENT': 'بانتظار رد العميل',
+  'FOLLOW_UP': 'في المتابعة',
+  'AWAITING_DOCS': 'بانتظار الأوراق',
+  'AWAITING_BANK_REP': 'بانتظار رد مندوب البنك',
+  'SOLD': 'تم البيع',
+  'NOT_SOLD': 'لم يتم البيع',
 }
 
 export default function MoveRequestModal({
@@ -17,6 +28,7 @@ export default function MoveRequestModal({
   request,
   onMove,
   isLoading,
+  targetStatus,
 }: MoveRequestModalProps) {
   const [comment, setComment] = useState('')
 
@@ -68,6 +80,15 @@ export default function MoveRequestModal({
                     <p className="text-sm text-gray-600">
                       الهاتف: {request.client?.phonePrimary}
                     </p>
+                    {targetStatus && (
+                      <div className="mt-3 pt-3 border-t border-gray-200">
+                        <p className="text-sm font-bold text-gray-900">
+                          نقل إلى: <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded">
+                            {statusTitles[targetStatus] || targetStatus}
+                          </span>
+                        </p>
+                      </div>
+                    )}
                   </div>
 
                   <form onSubmit={handleSubmit}>

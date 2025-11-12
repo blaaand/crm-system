@@ -103,38 +103,57 @@ export default function EditRequest() {
 
   // Fill form with existing data
   useEffect(() => {
-    if (request && request.installmentDetails) {
-      const details = request.installmentDetails
+    if (request) {
+      // Always set price
       setValue('price', request.price?.toString() || '')
-      setValue('carName', details.carName || '')
-      setValue('carPrice', details.carPrice?.toString() || '')
-      setValue('additionalFees', details.additionalFees?.toString() || '')
-      setValue('shipping', details.shipping?.toString() || '')
-      setValue('registration', details.registration?.toString() || '')
-      setValue('otherAdditions', details.otherAdditions?.toString() || '')
-      setValue('plateNumber', details.plateNumber?.toString() || '')
-      setValue('workOrganization', details.workOrganization || '')
-      setValue('age', details.age?.toString() || '')
-      setValue('salaryBankId', details.salaryBankId || '')
-      setValue('salary', details.salary?.toString() || '')
-      setValue('deductionPercentage', details.deductionPercentage?.toString() || '')
-      setValue('obligation1', details.obligation1?.toString() || '')
-      setValue('obligation2', details.obligation2?.toString() || '')
-      setValue('visaAmount', details.visaAmount?.toString() || '')
-      setValue('insurancePercentage', details.insurancePercentage?.toString() || '')
-      setValue('hasServiceStop', details.hasServiceStop || false)
-      setValue('financingBankId', details.financingBankId || '')
-      setValue('downPaymentPercentage', details.downPaymentPercentage?.toString() || '')
-      setValue('finalPaymentPercentage', details.finalPaymentPercentage?.toString() || '')
-      setValue('profitMargin', details.profitMargin?.toString() || '')
-      setValue('installmentMonths', details.installmentMonths?.toString() || '60')
-      // Load obligationTypes from JSON string if exists
-      if (details.obligationTypes) {
+      
+      // Handle INSTALLMENT requests
+      if (request.type === 'INSTALLMENT' && request.installmentDetails) {
+        const details = request.installmentDetails
+        setValue('carName', details.carName || '')
+        setValue('carPrice', details.carPrice?.toString() || '')
+        setValue('additionalFees', details.additionalFees?.toString() || '')
+        setValue('shipping', details.shipping?.toString() || '')
+        setValue('registration', details.registration?.toString() || '')
+        setValue('otherAdditions', details.otherAdditions?.toString() || '')
+        setValue('plateNumber', details.plateNumber?.toString() || '')
+        setValue('workOrganization', details.workOrganization || '')
+        setValue('age', details.age?.toString() || '')
+        setValue('salaryBankId', details.salaryBankId || '')
+        setValue('salary', details.salary?.toString() || '')
+        setValue('deductionPercentage', details.deductionPercentage?.toString() || '')
+        setValue('obligation1', details.obligation1?.toString() || '')
+        setValue('obligation2', details.obligation2?.toString() || '')
+        setValue('visaAmount', details.visaAmount?.toString() || '')
+        setValue('insurancePercentage', details.insurancePercentage?.toString() || '')
+        setValue('hasServiceStop', details.hasServiceStop || false)
+        setValue('financingBankId', details.financingBankId || '')
+        setValue('downPaymentPercentage', details.downPaymentPercentage?.toString() || '')
+        setValue('finalPaymentPercentage', details.finalPaymentPercentage?.toString() || '')
+        setValue('profitMargin', details.profitMargin?.toString() || '')
+        setValue('installmentMonths', details.installmentMonths?.toString() || '60')
+        // Load obligationTypes from JSON string if exists
+        if (details.obligationTypes) {
+          try {
+            const parsed = typeof details.obligationTypes === 'string' ? JSON.parse(details.obligationTypes) : details.obligationTypes
+            setValue('obligationTypes', Array.isArray(parsed) ? parsed : [])
+          } catch {
+            setValue('obligationTypes', [])
+          }
+        }
+      }
+      
+      // Handle CASH requests
+      if (request.type === 'CASH' && request.customFields) {
         try {
-          const parsed = typeof details.obligationTypes === 'string' ? JSON.parse(details.obligationTypes) : details.obligationTypes
-          setValue('obligationTypes', Array.isArray(parsed) ? parsed : [])
-        } catch {
-          setValue('obligationTypes', [])
+          const customFields = typeof request.customFields === 'string' ? JSON.parse(request.customFields) : request.customFields
+          setValue('carName', customFields.carName || '')
+          setValue('carPrice', customFields.carPrice?.toString() || '')
+          setValue('shipping', customFields.shippingPrice?.toString() || '')
+          setValue('plateNumber', customFields.platePrice?.toString() || '')
+          setValue('additionalFees', customFields.additionalPrice?.toString() || '')
+        } catch (error) {
+          console.error('Error parsing customFields:', error)
         }
       }
     }
@@ -405,36 +424,78 @@ export default function EditRequest() {
   }
 
   const onSubmit = (data: RequestForm) => {
-    const updateData = {
-      price: data.price ? parseFloat(data.price) : undefined,
-      installmentDetails: request?.type === 'INSTALLMENT' ? {
-        carName: data.carName || undefined,
-        carPrice: data.carPrice ? parseFloat(data.carPrice) : undefined,
-        additionalFees: data.additionalFees ? parseFloat(data.additionalFees) : undefined,
-        shipping: data.shipping ? parseFloat(data.shipping) : undefined,
-        registration: data.registration ? parseFloat(data.registration) : undefined,
-        otherAdditions: data.otherAdditions ? parseFloat(data.otherAdditions) : undefined,
-        plateNumber: data.plateNumber ? parseFloat(data.plateNumber) : undefined,
-        workOrganization: data.workOrganization || undefined,
-        age: data.age ? parseInt(data.age) : undefined,
-        salaryBankId: data.salaryBankId || undefined,
-        salary: data.salary ? parseFloat(data.salary) : undefined,
-        obligationTypes: data.obligationTypes || undefined,
-        deductionPercentage: data.deductionPercentage ? parseFloat(data.deductionPercentage) : undefined,
-        obligation1: data.obligation1 ? parseFloat(data.obligation1) : undefined,
-        obligation2: data.obligation2 ? parseFloat(data.obligation2) : undefined,
-        visaAmount: data.visaAmount ? parseFloat(data.visaAmount) : undefined,
-        insurancePercentage: data.insurancePercentage ? parseFloat(data.insurancePercentage) : undefined,
-        hasServiceStop: data.hasServiceStop || false,
-        financingBankId: data.financingBankId || undefined,
-        downPaymentPercentage: data.downPaymentPercentage ? parseFloat(data.downPaymentPercentage) : undefined,
-        finalPaymentPercentage: data.finalPaymentPercentage ? parseFloat(data.finalPaymentPercentage) : undefined,
-        profitMargin: data.profitMargin ? parseFloat(data.profitMargin) : undefined,
-        installmentMonths: data.installmentMonths ? parseInt(data.installmentMonths) : undefined,
-      } : undefined,
+    if (request?.type === 'CASH') {
+      // Handle CASH requests
+      const carPrice = parseFloat(data.carPrice || '0')
+      const shippingPrice = parseFloat(data.shipping || '0')
+      const platePrice = parseFloat(data.plateNumber || '0')
+      const additionalPrice = parseFloat(data.additionalFees || '0')
+      
+      // Calculate prices
+      const subtotal = carPrice + shippingPrice + additionalPrice
+      const tax = subtotal * 0.15
+      const totalWithTax = subtotal + tax
+      const totalWithPlateNoTax = subtotal + platePrice
+      const totalWithPlateAndTax = totalWithTax + platePrice
+      
+      // Get existing customFields and merge
+      const existingCustomFields = request.customFields 
+        ? (typeof request.customFields === 'string' ? JSON.parse(request.customFields) : request.customFields)
+        : {}
+      
+      const customFields = {
+        ...existingCustomFields,
+        carName: data.carName || '',
+        carPrice: carPrice,
+        shippingPrice: shippingPrice,
+        platePrice: platePrice,
+        additionalPrice: additionalPrice,
+        priceWithoutTax: subtotal,
+        tax: tax,
+        totalWithTax: totalWithTax,
+        totalWithPlateNoTax: totalWithPlateNoTax,
+        totalWithPlateAndTax: totalWithPlateAndTax,
+      }
+      
+      const updateData = {
+        price: totalWithPlateAndTax,
+        customFields: JSON.stringify(customFields),
+      }
+      
+      updateRequestMutation.mutate(updateData)
+    } else {
+      // Handle INSTALLMENT requests
+      const updateData = {
+        price: data.price ? parseFloat(data.price) : undefined,
+        installmentDetails: {
+          carName: data.carName || undefined,
+          carPrice: data.carPrice ? parseFloat(data.carPrice) : undefined,
+          additionalFees: data.additionalFees ? parseFloat(data.additionalFees) : undefined,
+          shipping: data.shipping ? parseFloat(data.shipping) : undefined,
+          registration: data.registration ? parseFloat(data.registration) : undefined,
+          otherAdditions: data.otherAdditions ? parseFloat(data.otherAdditions) : undefined,
+          plateNumber: data.plateNumber ? parseFloat(data.plateNumber) : undefined,
+          workOrganization: data.workOrganization || undefined,
+          age: data.age ? parseInt(data.age) : undefined,
+          salaryBankId: data.salaryBankId || undefined,
+          salary: data.salary ? parseFloat(data.salary) : undefined,
+          obligationTypes: data.obligationTypes || undefined,
+          deductionPercentage: data.deductionPercentage ? parseFloat(data.deductionPercentage) : undefined,
+          obligation1: data.obligation1 ? parseFloat(data.obligation1) : undefined,
+          obligation2: data.obligation2 ? parseFloat(data.obligation2) : undefined,
+          visaAmount: data.visaAmount ? parseFloat(data.visaAmount) : undefined,
+          insurancePercentage: data.insurancePercentage ? parseFloat(data.insurancePercentage) : undefined,
+          hasServiceStop: data.hasServiceStop || false,
+          financingBankId: data.financingBankId || undefined,
+          downPaymentPercentage: data.downPaymentPercentage ? parseFloat(data.downPaymentPercentage) : undefined,
+          finalPaymentPercentage: data.finalPaymentPercentage ? parseFloat(data.finalPaymentPercentage) : undefined,
+          profitMargin: data.profitMargin ? parseFloat(data.profitMargin) : undefined,
+          installmentMonths: data.installmentMonths ? parseInt(data.installmentMonths) : undefined,
+        },
+      }
+      
+      updateRequestMutation.mutate(updateData)
     }
-
-    updateRequestMutation.mutate(updateData)
   }
 
   if (isLoading) {
@@ -464,226 +525,316 @@ export default function EditRequest() {
             <p className="text-sm text-gray-600 mt-1">{request.title}</p>
           </div>
           <form onSubmit={handleSubmit(onSubmit)} className="card-body space-y-6">
-            {/* المبلغ الإجمالي */}
-            <div>
-              <h3 className="text-lg font-medium text-gray-900 mb-4">💰 المبلغ الإجمالي</h3>
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    المبلغ (ريال)
-                  </label>
-                  <input
-                    {...register('price')}
-                    type="number"
-                    step="0.01"
-                    className="input"
-                    placeholder="0.00"
-                  />
+            {/* تفاصيل الكاش */}
+            {request.type === 'CASH' && (
+              <div className="space-y-6">
+                <div className="border-2 border-green-200 rounded-lg p-4 bg-green-50">
+                  <h4 className="text-sm font-bold text-green-900 mb-3">💵 تفاصيل الكاش</h4>
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        اسم السيارة 🚗
+                      </label>
+                      <input
+                        {...register('carName')}
+                        type="text"
+                        className="input"
+                        placeholder="مثال: تويوتا كامري 2024"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        سعر السيارة 🚙
+                      </label>
+                      <input
+                        {...register('carPrice')}
+                        type="number"
+                        step="0.01"
+                        className="input"
+                        placeholder="0.00"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        سعر اللوح 🔖
+                      </label>
+                      <input
+                        {...register('plateNumber')}
+                        type="number"
+                        step="0.01"
+                        className="input"
+                        placeholder="0.00"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        سعر الشحن 🚚
+                      </label>
+                      <input
+                        {...register('shipping')}
+                        type="number"
+                        step="0.01"
+                        className="input"
+                        placeholder="0.00"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        زيادة إضافية ➕
+                      </label>
+                      <input
+                        {...register('additionalFees')}
+                        type="number"
+                        step="0.01"
+                        className="input"
+                        placeholder="0.00"
+                      />
+                    </div>
+                  </div>
+
+                  {/* عرض الحسابات التلقائية */}
+                  {(() => {
+                    const carPrice = parseFloat(watchedValues.carPrice || '0')
+                    const shippingPrice = parseFloat(watchedValues.shipping || '0')
+                    const platePrice = parseFloat(watchedValues.plateNumber || '0')
+                    const additionalPrice = parseFloat(watchedValues.additionalFees || '0')
+                    
+                    const subtotal = carPrice + shippingPrice + additionalPrice
+                    const tax = subtotal * 0.15
+                    const totalWithTax = subtotal + tax
+                    const totalWithPlateNoTax = subtotal + platePrice
+                    const totalWithPlateAndTax = totalWithTax + platePrice
+                    
+                    if (subtotal === 0) return null
+                    
+                    return (
+                      <div className="mt-4 space-y-3 border-t-2 border-gray-300 pt-4">
+                        <div className="flex justify-between py-2 px-3 bg-gray-50 rounded-lg">
+                          <span className="text-sm text-gray-700">الضريبة (15%)</span>
+                          <span className="font-bold text-orange-600">{Math.round(tax).toLocaleString()} ريال</span>
+                        </div>
+                        
+                        <div className="flex justify-between py-3 px-3 bg-green-100 rounded-lg border-2 border-green-300">
+                          <span className="text-sm font-bold text-green-900">شامل اللوح (بدون ضريبة)</span>
+                          <span className="font-bold text-green-700 text-xl">{Math.round(totalWithPlateNoTax).toLocaleString()} ريال</span>
+                        </div>
+                        
+                        <div className="flex justify-between py-3 px-3 bg-blue-100 rounded-lg border-2 border-blue-400 shadow-lg">
+                          <span className="text-base font-bold text-blue-900">السعر النهائي (شامل كل شيء)</span>
+                          <span className="font-bold text-blue-700 text-2xl">{Math.round(totalWithPlateAndTax).toLocaleString()} ريال</span>
+                        </div>
+                      </div>
+                    )
+                  })()}
                 </div>
               </div>
-            </div>
+            )}
 
             {/* تفاصيل التقسيط */}
             {request.type === 'INSTALLMENT' && (
               <div className="space-y-6">
                 {/* صف 1: تفاصيل سعر السيارة + تحليل ايراد سريع */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                  {/* تفاصيل سعر السيارة */}
-                  <div className="border-2 border-green-200 rounded-lg p-4 bg-green-50">
-                    <h4 className="text-sm font-bold text-green-900 mb-3">🚗 تفاصيل سعر السيارة</h4>
-                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          سعر السيارة الأساسي 🚙
-                        </label>
-                        <input
-                          {...register('carPrice')}
-                          type="number"
-                          step="0.01"
-                          className="input"
-                          placeholder="0.00"
-                        />
-                      </div>
+                {/* تفاصيل سعر السيارة */}
+                <div className="border-2 border-green-200 rounded-lg p-4 bg-green-50">
+                  <h4 className="text-sm font-bold text-green-900 mb-3">🚗 تفاصيل سعر السيارة</h4>
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        سعر السيارة الأساسي 🚙
+                      </label>
+                      <input
+                        {...register('carPrice')}
+                        type="number"
+                        step="0.01"
+                        className="input"
+                        placeholder="0.00"
+                      />
+                    </div>
 
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          زيادة إضافية ➕
-                        </label>
-                        <input
-                          {...register('additionalFees')}
-                          type="number"
-                          step="0.01"
-                          className="input"
-                          placeholder="0.00"
-                        />
-                      </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        زيادة إضافية ➕
+                      </label>
+                      <input
+                        {...register('additionalFees')}
+                        type="number"
+                        step="0.01"
+                        className="input"
+                        placeholder="0.00"
+                      />
+                    </div>
 
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          الشحن 🚚
-                        </label>
-                        <input
-                          {...register('shipping')}
-                          type="number"
-                          step="0.01"
-                          className="input"
-                          placeholder="0.00"
-                        />
-                      </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        الشحن 🚚
+                      </label>
+                      <input
+                        {...register('shipping')}
+                        type="number"
+                        step="0.01"
+                        className="input"
+                        placeholder="0.00"
+                      />
+                    </div>
 
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          التجيير 📄
-                        </label>
-                        <input
-                          {...register('registration')}
-                          type="number"
-                          step="0.01"
-                          className="input"
-                          placeholder="0.00"
-                        />
-                      </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        التجيير 📄
+                      </label>
+                      <input
+                        {...register('registration')}
+                        type="number"
+                        step="0.01"
+                        className="input"
+                        placeholder="0.00"
+                      />
+                    </div>
 
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          زيادة أخرى 📈
-                        </label>
-                        <input
-                          {...register('otherAdditions')}
-                          type="number"
-                          step="0.01"
-                          className="input"
-                          placeholder="0.00"
-                        />
-                      </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        زيادة أخرى 📈
+                      </label>
+                      <input
+                        {...register('otherAdditions')}
+                        type="number"
+                        step="0.01"
+                        className="input"
+                        placeholder="0.00"
+                      />
+                    </div>
 
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          اللوح 🏷️
-                        </label>
-                        <input
-                          {...register('plateNumber')}
-                          type="number"
-                          step="0.01"
-                          className="input"
-                          placeholder="0.00"
-                        />
-                      </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        اللوح 🏷️
+                      </label>
+                      <input
+                        {...register('plateNumber')}
+                        type="number"
+                        step="0.01"
+                        className="input"
+                        placeholder="0.00"
+                      />
                     </div>
                   </div>
+                </div>
 
-                  {/* تحليل ايراد سريع (لا يتم حفظه) */}
-                  <div className="border-2 border-yellow-300 rounded-lg p-4 bg-yellow-50">
+                {/* تحليل ايراد سريع (لا يتم حفظه) */}
+                <div className="border-2 border-yellow-300 rounded-lg p-4 bg-yellow-50">
                     <h4 className="text-sm font-bold text-yellow-900 mb-3">💰 تحليل ايراد سريع</h4>
-                    {(() => {
-                      const car = parseFloat(watchedValues.carPrice || '0') || 0
-                      const add = parseFloat(watchedValues.additionalFees || '0') || 0
-                      const ship = parseFloat(watchedValues.shipping || '0') || 0
-                      const reg = parseFloat(watchedValues.registration || '0') || 0
-                      const other = parseFloat(watchedValues.otherAdditions || '0') || 0
-                      const plate = parseFloat(watchedValues.plateNumber || '0') || 0
-                      const priceWithPlateNoTax = (car + add + ship + reg + other) + plate
-                      const supportPct = parseFloat(((watchedValues as any)?._supportPct || '0')) || 0
-                      const supportAmount = priceWithPlateNoTax * 1.15 * (supportPct / 100)
-                      const expenses = reg + ship + plate + other + supportAmount
-                      const cost = parseFloat(((watchedValues as any)?._quickCost || '0')) || 0
-                      const net = priceWithPlateNoTax - cost - expenses
-                      const pct = priceWithPlateNoTax > 0 ? (net / priceWithPlateNoTax) * 100 : 0
-                      return (
+                  {(() => {
+                    const car = parseFloat(watchedValues.carPrice || '0') || 0
+                    const add = parseFloat(watchedValues.additionalFees || '0') || 0
+                    const ship = parseFloat(watchedValues.shipping || '0') || 0
+                    const reg = parseFloat(watchedValues.registration || '0') || 0
+                    const other = parseFloat(watchedValues.otherAdditions || '0') || 0
+                    const plate = parseFloat(watchedValues.plateNumber || '0') || 0
+                    const priceWithPlateNoTax = (car + add + ship + reg + other) + plate
+                    const supportPct = parseFloat(((watchedValues as any)?._supportPct || '0')) || 0
+                    const supportAmount = priceWithPlateNoTax * 1.15 * (supportPct / 100)
+                    const expenses = reg + ship + plate + other + supportAmount
+                    const cost = parseFloat(((watchedValues as any)?._quickCost || '0')) || 0
+                    const net = priceWithPlateNoTax - cost - expenses
+                    const pct = priceWithPlateNoTax > 0 ? (net / priceWithPlateNoTax) * 100 : 0
+                    return (
                         <div className="space-y-3">
-                          <div>
-                            <label className="block text-sm font-semibold text-gray-800 mb-1">سعر البيع (تلقائي)</label>
-                            <input className="input bg-gray-100" value={`${Math.round(priceWithPlateNoTax).toLocaleString()} ريال`} disabled />
-                          </div>
-                          <div>
-                            <label className="block text-sm font-semibold text-gray-800 mb-1">سعر التكلفة أو شراء السيارة</label>
-                            <input className="input" type="number" step="0.01" value={(watchedValues as any)?._quickCost || ''} onChange={(e)=>setValue('_quickCost' as any, e.target.value)} placeholder="0.00" />
-                          </div>
-                          <div>
-                            <label className="block text-sm font-semibold text-gray-800 mb-1">حسبة الدعم (%)</label>
-                            <input className="input" type="number" step="0.01" value={(watchedValues as any)?._supportPct || ''} onChange={(e)=>setValue('_supportPct' as any, e.target.value)} placeholder="أدخل النسبة" />
-                          </div>
-                          <div>
-                            <label className="block text-sm font-semibold text-gray-800 mb-1">مصروفات البيع (تلقائي)</label>
-                            <input className="input bg-gray-100" value={`${Math.round(expenses).toLocaleString()} ريال`} disabled />
-                            <p className="mt-1 text-[11px] text-gray-600">تشمل: التجيير + الشحن + اللوح + زيادة أخرى + حسبة الدعم</p>
-                          </div>
-                          <div className="grid grid-cols-2 gap-3">
-                            <div>
-                              <label className="block text-sm font-semibold text-gray-800 mb-1">صافي الايراد (مبلغ)</label>
-                              <input className="input bg-gray-100" value={`${Math.round(net).toLocaleString()} ريال`} disabled />
-                            </div>
-                            <div>
-                              <label className="block text-sm font-semibold text-gray-800 mb-1">صافي الايراد (نسبة)</label>
-                              <input className="input bg-gray-100" value={`${pct.toFixed(2)} %`} disabled />
-                            </div>
-                          </div>
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-800 mb-1">سعر البيع (تلقائي)</label>
+                          <input className="input bg-gray-100" value={`${Math.round(priceWithPlateNoTax).toLocaleString()} ريال`} disabled />
                         </div>
-                      )
-                    })()}
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-800 mb-1">سعر التكلفة أو شراء السيارة</label>
+                          <input className="input" type="number" step="0.01" value={(watchedValues as any)?._quickCost || ''} onChange={(e)=>setValue('_quickCost' as any, e.target.value)} placeholder="0.00" />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-800 mb-1">حسبة الدعم (%)</label>
+                          <input className="input" type="number" step="0.01" value={(watchedValues as any)?._supportPct || ''} onChange={(e)=>setValue('_supportPct' as any, e.target.value)} placeholder="أدخل النسبة" />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-800 mb-1">مصروفات البيع (تلقائي)</label>
+                          <input className="input bg-gray-100" value={`${Math.round(expenses).toLocaleString()} ريال`} disabled />
+                          <p className="mt-1 text-[11px] text-gray-600">تشمل: التجيير + الشحن + اللوح + زيادة أخرى + حسبة الدعم</p>
+                        </div>
+                          <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-800 mb-1">صافي الايراد (مبلغ)</label>
+                          <input className="input bg-gray-100" value={`${Math.round(net).toLocaleString()} ريال`} disabled />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-800 mb-1">صافي الايراد (نسبة)</label>
+                          <input className="input bg-gray-100" value={`${pct.toFixed(2)} %`} disabled />
+                            </div>
+                        </div>
+                      </div>
+                    )
+                  })()}
                   </div>
                 </div>
 
                 {/* صف 2: بيانات العميل + الالتزامات */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                  {/* بيانات العميل الإضافية */}
+                {/* بيانات العميل الإضافية */}
                   <div className="border-2 border-purple-200 rounded-lg p-4 bg-purple-50">
                     <h4 className="text-sm font-bold text-purple-900 mb-3">📋 بيانات العميل الإضافية</h4>
                     <div className="grid grid-cols-1 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          السيارة المطلوبة 🚗
-                        </label>
-                        <input
-                          {...register('carName')}
-                          type="text"
-                          className="input"
-                          placeholder="مثال: تويوتا كامري 2024"
-                        />
-                      </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        السيارة المطلوبة 🚗
+                      </label>
+                      <input
+                        {...register('carName')}
+                        type="text"
+                        className="input"
+                        placeholder="مثال: تويوتا كامري 2024"
+                      />
+                    </div>
 
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          جهة العمل 💼
-                        </label>
-                        <select {...register('workOrganization')} className="input">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        جهة العمل 💼
+                      </label>
+                      <select {...register('workOrganization')} className="input">
                           <option value="">اختر جهة العمل</option>
-                          {workOrganizationOptions.map((option) => (
-                            <option key={option.value} value={option.value}>
-                              {option.label}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
+                        {workOrganizationOptions.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
 
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
                           العمر
-                        </label>
-                        <input
-                          {...register('age')}
-                          type="number"
-                          className="input"
+                      </label>
+                      <input
+                        {...register('age')}
+                        type="number"
+                        className="input"
                           placeholder="مثال: 35"
-                        />
-                      </div>
+                      />
+                    </div>
 
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
                           البنك الذي ينزل عليه الراتب
-                        </label>
-                        <select {...register('salaryBankId')} className="input">
+                      </label>
+                      <select {...register('salaryBankId')} className="input">
                           <option value="">اختر البنك</option>
-                          {banksData?.map((bank) => (
-                            <option key={bank.id} value={bank.id}>
-                              {bank.name}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
+                        {banksData?.map((bank) => (
+                          <option key={bank.id} value={bank.id}>
+                            {bank.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
 
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
                           مبلغ الراتب 💰
                         </label>
                         <input
@@ -698,45 +849,45 @@ export default function EditRequest() {
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
                           نسبة التأمين (%)
-                        </label>
-                        <input
-                          {...register('insurancePercentage')}
-                          type="number"
-                          step="0.01"
-                          min="0"
-                          max="100"
-                          className="input"
+                      </label>
+                      <input
+                        {...register('insurancePercentage')}
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        max="100"
+                        className="input"
                           placeholder="مثال: 5.5"
-                        />
-                      </div>
+                      />
+                    </div>
 
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
                           هل يوجد إيقاف خدمات؟
-                        </label>
+                      </label>
                         <div className="flex items-center space-x-4">
                           <label className="flex items-center">
-                            <input
-                              {...register('hasServiceStop')}
-                              type="radio"
-                              value="true"
+                          <input
+                            {...register('hasServiceStop')}
+                            type="radio"
+                            value="true"
                               className="text-primary-600 focus:ring-primary-500"
-                            />
-                            <span className="mr-2 text-sm">نعم</span>
-                          </label>
+                          />
+                          <span className="mr-2 text-sm">نعم</span>
+                        </label>
                           <label className="flex items-center">
-                            <input
-                              {...register('hasServiceStop')}
-                              type="radio"
-                              value="false"
+                          <input
+                            {...register('hasServiceStop')}
+                            type="radio"
+                            value="false"
                               className="text-primary-600 focus:ring-primary-500"
-                            />
-                            <span className="mr-2 text-sm">لا</span>
-                          </label>
-                        </div>
+                          />
+                          <span className="mr-2 text-sm">لا</span>
+                      </label>
                       </div>
                     </div>
                   </div>
+                </div>
 
                   {/* قسم الالتزامات */}
                   <div className="border-2 border-orange-200 rounded-lg p-4 bg-orange-50">
@@ -760,64 +911,64 @@ export default function EditRequest() {
                               <span className="mr-2 text-sm text-gray-700">{option.label}</span>
                             </label>
                           ))}
-                        </div>
+                    </div>
                       </div>
 
                       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
                             نسبة الاستقطاع (%)
-                          </label>
-                          <input
-                            {...register('deductionPercentage')}
-                            type="number"
-                            step="0.01"
-                            min="0"
-                            max="100"
-                            className="input"
+                      </label>
+                      <input
+                        {...register('deductionPercentage')}
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        max="100"
+                        className="input"
                             placeholder="مثال: 33.5"
-                          />
-                        </div>
+                      />
+                    </div>
 
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
                             التزام 1
-                          </label>
-                          <input
-                            {...register('obligation1')}
-                            type="number"
-                            step="0.01"
-                            className="input"
-                            placeholder="0.00"
-                          />
-                        </div>
+                      </label>
+                      <input
+                        {...register('obligation1')}
+                        type="number"
+                        step="0.01"
+                        className="input"
+                        placeholder="0.00"
+                      />
+                    </div>
 
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
                             التزام 2
-                          </label>
-                          <input
-                            {...register('obligation2')}
-                            type="number"
-                            step="0.01"
-                            className="input"
-                            placeholder="0.00"
-                          />
-                        </div>
+                      </label>
+                      <input
+                        {...register('obligation2')}
+                        type="number"
+                        step="0.01"
+                        className="input"
+                        placeholder="0.00"
+                      />
+                    </div>
 
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            الفيزا 💳
-                          </label>
-                          <input
-                            {...register('visaAmount')}
-                            type="number"
-                            step="0.01"
-                            className="input"
-                            placeholder="0.00"
-                          />
-                        </div>
-                      </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        الفيزا 💳
+                      </label>
+                      <input
+                        {...register('visaAmount')}
+                        type="number"
+                        step="0.01"
+                        className="input"
+                        placeholder="0.00"
+                      />
+                    </div>
+                  </div>
 
                       {/* الحسابات التلقائية للالتزامات */}
                       {calculateInstallmentAmounts && (calculateInstallmentAmounts.deductedAmount > 0 || calculateInstallmentAmounts.finalAmount !== 0) && (
@@ -828,8 +979,8 @@ export default function EditRequest() {
                             <div className="flex justify-between py-2 border-b border-gray-200">
                               <span className="text-gray-700">المبلغ المستقطع (الراتب × النسبة):</span>
                               <span className="font-bold text-blue-600">{calculateInstallmentAmounts.deductedAmount.toLocaleString()} ريال</span>
-                            </div>
-                            
+                </div>
+
                             <div className="flex justify-between py-2 border-b border-gray-200">
                               <span className="text-gray-700">إجمالي الالتزامات + (الفيزا × 0.05):</span>
                               <span className="font-bold text-red-600">{calculateInstallmentAmounts.totalObligations.toLocaleString()} ريال</span>
@@ -1080,33 +1231,33 @@ export default function EditRequest() {
                       </div>
                     </div>
                   )}
-                  
-                  {/* تحذير إذا كان القسط الشهري أعلى من المسموح */}
+                      
+                      {/* تحذير إذا كان القسط الشهري أعلى من المسموح */}
                   {showWarning && generalFinancing && (
-                    <div className="mt-4 bg-red-50 border-2 border-red-300 rounded-lg p-4">
-                      <div className="flex items-start">
-                        <div className="flex-shrink-0">
-                          <svg className="h-5 w-5 text-red-600" viewBox="0 0 20 20" fill="currentColor">
-                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                          </svg>
-                        </div>
-                        <div className="mr-3">
-                          <h3 className="text-sm font-bold text-red-900">
-                            ⚠️ تحذير: القسط الشهري أعلى من المسموح للعميل
-                          </h3>
-                          <div className="mt-2 text-sm text-red-700">
-                            <p className="mb-2">
-                              <span className="font-bold">القسط الشهري (مع التأمين):</span> {Math.round(monthlyInstallment).toLocaleString()} ريال
-                            </p>
-                            <p className="mb-2">
-                              <span className="font-bold">المبلغ المسموح للعميل:</span> {finalAmount.toLocaleString()} ريال
-                            </p>
-                            <p className="text-red-800 font-medium">
+                          <div className="mt-4 bg-red-50 border-2 border-red-300 rounded-lg p-4">
+                            <div className="flex items-start">
+                              <div className="flex-shrink-0">
+                                <svg className="h-5 w-5 text-red-600" viewBox="0 0 20 20" fill="currentColor">
+                                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                                </svg>
+                              </div>
+                              <div className="mr-3">
+                                <h3 className="text-sm font-bold text-red-900">
+                                  ⚠️ تحذير: القسط الشهري أعلى من المسموح للعميل
+                                </h3>
+                                <div className="mt-2 text-sm text-red-700">
+                                  <p className="mb-2">
+                                    <span className="font-bold">القسط الشهري (مع التأمين):</span> {Math.round(monthlyInstallment).toLocaleString()} ريال
+                                  </p>
+                                  <p className="mb-2">
+                                    <span className="font-bold">المبلغ المسموح للعميل:</span> {finalAmount.toLocaleString()} ريال
+                                  </p>
+                                  <p className="text-red-800 font-medium">
                               القسط الشهري أعلى من المبلغ المسموح للعميل بعد خصم الالتزامات. يرجى مراجعة المعاملات أو التفاوض مع العميل.
-                            </p>
-                          </div>
-                        </div>
-                      </div>
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
                     </div>
                   )}
                 </div>

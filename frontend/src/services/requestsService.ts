@@ -58,4 +58,9 @@ export const requestsService = {
     const response = await api.get('/requests/stats')
     return response.data
   },
+
+  async addComment(requestId: string, text: string): Promise<any> {
+    const response = await api.post(`/requests/${requestId}/comments`, { text })
+    return response.data
+  },
 }

@@ -408,6 +408,50 @@ export class RequestsService {
     return this.findOne(result.id, userId, userRole);
   }
 
+  async addComment(requestId: string, text: string, userId: string) {
+    // Verify request exists
+    const request = await this.prisma.request.findUnique({
+      where: { id: requestId },
+    });
+
+    if (!request) {
+      throw new NotFoundException('الطلب غير موجود');
+    }
+
+    // Create comment and update request updatedAt in a transaction
+    const result = await this.prisma.$transaction(async (tx) => {
+      // Create comment
+      const comment = await tx.comment.create({
+        data: {
+          requestId,
+          userId,
+          text,
+        },
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
+        },
+      });
+
+      // Update request updatedAt to reflect the comment addition
+      await tx.request.update({
+        where: { id: requestId },
+        data: {
+          updatedAt: new Date(),
+        },
+      });
+
+      return comment;
+    });
+
+    return result;
+  }
+
   async remove(id: string, userId: string, userRole: UserRole) {
     const request = await this.prisma.request.findUnique({
       where: { id },

@@ -1,0 +1,202 @@
+﻿                  {/* ╪ز┘╪د╪╡┘è┘ ╪│╪╣╪▒ ╪د┘╪│┘è╪د╪▒╪ر ┘┘╪ز┘é╪│┘è╪╖ + ╪ز╪ص┘┘è┘ ╪ح┘è╪▒╪د╪» ╪│╪▒┘è╪╣ */}
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                    {/* ╪ز┘╪د╪╡┘è┘ ╪د┘╪│╪╣╪▒ */}
+                    <div className="border-2 border-green-200 rounded-lg p-4 bg-green-50">
+                    <h4 className="text-sm font-bold text-green-900 mb-3">╪ز┘╪د╪╡┘è┘ ╪│╪╣╪▒ ╪د┘╪│┘è╪د╪▒╪ر</h4>
+                    
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          ╪│╪╣╪▒ ╪د┘╪│┘è╪د╪▒╪ر ╪د┘╪ث╪│╪د╪│┘è ≡اأù
+                        </label>
+                        <input
+                          {...register('carPrice')}
+                          type="number"
+                          step="0.01"
+                          className="input"
+                          placeholder="0.00"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          ╪▓┘è╪د╪»╪ر ╪ح╪╢╪د┘┘è╪ر ظئـ
+                        </label>
+                        <input
+                          {...register('additionalFees')}
+                          type="number"
+                          step="0.01"
+                          className="input"
+                          placeholder="0.00"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          ╪د┘╪ز╪ش┘è┘è╪▒ ≡اôï
+                        </label>
+                        <input
+                          {...register('registration')}
+                          type="number"
+                          step="0.01"
+                          className="input"
+                          placeholder="0.00"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          ╪د┘╪┤╪ص┘ ≡اأأ
+                        </label>
+                        <input
+                          {...register('shipping')}
+                          type="number"
+                          step="0.01"
+                          className="input"
+                          placeholder="0.00"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          ╪▓┘è╪د╪»╪ر ╪ث╪«╪▒┘ë ظأة
+                        </label>
+                        <input
+                          {...register('otherAdditions')}
+                          type="number"
+                          step="0.01"
+                          className="input"
+                          placeholder="0.00"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          ╪د┘┘┘ê╪ص ≡ا╖ي╕
+                        </label>
+                        <input
+                          {...register('plateNumber')}
+                          type="number"
+                          step="0.01"
+                          className="input"
+                          placeholder="0.00"
+                        />
+                      </div>
+                    </div>
+                    </div>
+
+                    {/* ╪ز╪ص┘┘è┘ ╪ح┘è╪▒╪د╪» ╪│╪▒┘è╪╣ */}
+                    <div className="border-2 border-yellow-300 rounded-lg p-4 bg-yellow-50">
+                      <h4 className="text-sm font-bold text-yellow-900 mb-3">╪ز╪ص┘┘è┘ ╪د┘è╪▒╪د╪» ╪│╪▒┘è╪╣</h4>
+                      <div className="space-y-3">
+                        {/* ╪│╪╣╪▒ ╪د┘╪ذ┘è╪╣ (╪ز┘┘é╪د╪خ┘è) */}
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-800 mb-1">╪│╪╣╪▒ ╪د┘╪ذ┘è╪╣ (╪ز┘┘é╪د╪خ┘è)</label>
+                          <input
+                            type="text"
+                            className="input bg-gray-100 cursor-not-allowed"
+                            value={installmentCarPrices ? `${installmentCarPrices.priceWithPlateNoTax.toLocaleString()} ╪▒┘è╪د┘` : ''}
+                            disabled
+                          />
+                          <p className="mt-1 text-xs text-gray-600">╪د┘┘é┘è┘à╪ر ┘à┘: ╪د┘╪│╪╣╪▒ ╪┤╪د┘à┘ ╪د┘┘┘ê╪ص (╪ذ╪»┘ê┘ ╪╢╪▒┘è╪ذ╪ر)</p>
+                        </div>
+
+                        {/* ╪│╪╣╪▒ ╪د┘╪ز┘â┘┘╪ر / ╪د┘╪┤╪▒╪د╪ة */}
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-800 mb-1">╪│╪╣╪▒ ╪د┘╪ز┘â┘┘╪ر ╪ث┘ê ╪│╪╣╪▒ ╪┤╪▒╪د╪ة ╪د┘╪│┘è╪د╪▒╪ر</label>
+                          <input
+                            type="number"
+                            step="0.01"
+                            className="input"
+                            value={watchedValues as any && (watchedValues as any)._quickCost || ''}
+                            onChange={(e) => setValue('_quickCost' as any, e.target.value)}
+                            placeholder="0.00"
+                          />
+                        </div>
+
+                        {/* ┘à╪╡╪▒┘ê┘╪د╪ز ╪د┘╪ذ┘è╪╣ = ╪د┘╪ز╪ش┘è┘è╪▒ + ╪د┘╪┤╪ص┘ + ╪د┘┘┘ê╪ص + ╪▓┘è╪د╪»╪ر ╪ث╪«╪▒┘ë (+ ╪ص╪│╪ذ╪ر ╪د┘╪»╪╣┘à) */}
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-800 mb-1">┘à╪╡╪▒┘ê┘╪د╪ز ╪د┘╪ذ┘è╪╣</label>
+                          {(() => {
+                            const reg = parseFloat(registration || '0') || 0
+                            const ship = parseFloat(watchedValues.shipping || '0') || 0
+                            const plate = parseFloat(watchedValues.plateNumber || '0') || 0
+                            const other = parseFloat(watchedValues.otherAdditions || '0') || 0
+                            const sale = installmentCarPrices ? installmentCarPrices.priceWithPlateNoTax : 0
+                            const supportPct = parseFloat(((watchedValues as any)?._supportPct || '0')) || 0
+                            const supportAmount = sale * 1.15 * (supportPct / 100)
+                            const expenses = reg + ship + plate + other + supportAmount
+                            return (
+                              <input
+                                type="text"
+                                className="input bg-gray-100 cursor-not-allowed"
+                                value={`${expenses.toLocaleString()} ╪▒┘è╪د┘`}
+                                disabled
+                              />
+                            )
+                          })()}
+                          <p className="mt-1 text-xs text-gray-600">┘à╪ش┘à┘ê╪╣: ╪د┘╪ز╪ش┘è┘è╪▒ + ╪د┘╪┤╪ص┘ + ╪د┘┘┘ê╪ص + ╪▓┘è╪د╪»╪ر ╪ث╪«╪▒┘ë + ╪ص╪│╪ذ╪ر ╪د┘╪»╪╣┘à</p>
+                        </div>
+
+                        {/* ╪╡╪د┘┘è ╪د┘╪د┘è╪▒╪د╪» (┘à╪ذ┘╪║ ┘ê┘╪│╪ذ╪ر) */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          {(() => {
+                            const sale = installmentCarPrices ? installmentCarPrices.priceWithPlateNoTax : 0
+                            const cost = parseFloat(((watchedValues as any)?._quickCost || '0')) || 0
+                            const reg = parseFloat(registration || '0') || 0
+                            const ship = parseFloat(watchedValues.shipping || '0') || 0
+                            const plate = parseFloat(watchedValues.plateNumber || '0') || 0
+                            const other = parseFloat(watchedValues.otherAdditions || '0') || 0
+                            const supportPct = parseFloat(((watchedValues as any)?._supportPct || '0')) || 0
+                            const supportAmount = sale * 1.15 * (supportPct / 100)
+                            const expenses = reg + ship + plate + other + supportAmount
+                            const net = sale - cost - expenses
+                            const pct = sale > 0 ? (net / sale) : 0
+                            return (
+                              <>
+                                <div>
+                                  <label className="block text-sm font-semibold text-gray-800 mb-1">╪╡╪د┘┘è ╪د┘╪د┘è╪▒╪د╪» (┘à╪ذ┘╪║)</label>
+                                  <input type="text" className="input bg-gray-100 cursor-not-allowed" value={`${Math.round(net).toLocaleString()} ╪▒┘è╪د┘`} disabled />
+                                </div>
+                                <div>
+                                  <label className="block text-sm font-semibold text-gray-800 mb-1">╪╡╪د┘┘è ╪د┘╪د┘è╪▒╪د╪» (┘╪│╪ذ╪ر)</label>
+                                  <input type="text" className="input bg-gray-100 cursor-not-allowed" value={`${(pct * 100).toFixed(2)} %`} disabled />
+                                  <p className="mt-1 text-[11px] text-gray-600">╪د┘┘à╪╣╪د╪»┘╪ر: (╪│╪╣╪▒ ╪د┘╪ذ┘è╪╣ - ╪│╪╣╪▒ ╪د┘╪ز┘â┘┘╪ر - ┘à╪╡╪▒┘ê┘╪د╪ز ╪د┘╪ذ┘è╪╣) ├╖ ╪│╪╣╪▒ ╪د┘╪ذ┘è╪╣</p>
+                                </div>
+                              </>
+                            )
+                          })()}
+                        </div>
+
+                        {/* ╪ص╪│╪ذ╪ر ╪د┘╪»╪╣┘à (%) */}
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-800 mb-1">╪ص╪│╪ذ╪ر ╪د┘╪»╪╣┘à (%)</label>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <input
+                              type="number"
+                              step="0.01"
+                              className="input"
+                              value={((watchedValues as any)?._supportPct || '')}
+                              onChange={(e) => setValue('_supportPct' as any, e.target.value)}
+                              placeholder="╪ث╪»╪«┘ ╪د┘┘╪│╪ذ╪ر ┘à╪س┘╪د┘ï 1 ╪ز╪╣┘┘è 1%"
+                            />
+                            {(() => {
+                              const sale = installmentCarPrices ? installmentCarPrices.priceWithPlateNoTax : 0
+                              const supportPct = parseFloat(((watchedValues as any)?._supportPct || '0')) || 0
+                              const supportAmount = sale * 1.15 * (supportPct / 100)
+                              return (
+                                <input
+                                  type="text"
+                                  className="input bg-gray-100 cursor-not-allowed"
+                                  value={`┘é┘è┘à╪ر ╪د┘╪»╪╣┘à: ${Math.round(supportAmount).toLocaleString()} ╪▒┘è╪د┘`}
+                                  disabled
+                                />
+                              )
+                            })()}
+                          </div>
+                          <p className="mt-1 text-[11px] text-gray-600">╪د┘┘à╪╣╪د╪»┘╪ر: ╪│╪╣╪▒ ╪د┘╪ذ┘è╪╣ ├ù 1.15 ├ù (╪د┘┘╪│╪ذ╪ر ├╖ 100). ╪ز┘╪╢╪د┘ ┘é┘è┘à╪ر ╪د┘╪»╪╣┘à ╪ح┘┘ë ┘à╪╡╪▒┘ê┘╪د╪ز ╪د┘╪ذ┘è╪╣</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
