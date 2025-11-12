@@ -5,7 +5,6 @@ import { AppModule } from './app.module';
 import { PrismaService } from './common/prisma/prisma.service';
 import { migrateClientFields } from './common/migrate-client-fields';
 import * as express from 'express';
-import * as cors from 'cors';
 
 async function bootstrap() {
   console.log('🚀 Starting CRM Backend Server...');
@@ -30,9 +29,6 @@ async function bootstrap() {
       // Continue anyway - fields might already exist
     }
 
-    // Get Express app instance FIRST
-    const expressApp = app.getHttpAdapter().getInstance();
-    
     // Enable CORS FIRST - before any other middleware
     const defaultOrigins = [
       'http://localhost:5173',
@@ -56,51 +52,7 @@ async function bootstrap() {
     console.log(`🌐 CORS origins: ${allowedOrigins.join(', ')}`);
     console.log(`🌐 CORS_ORIGIN env: ${process.env.CORS_ORIGIN || 'not set'}`);
     
-    // Use Express CORS middleware directly - more reliable
-    expressApp.use(cors({
-      origin: (origin, callback) => {
-        // Allow requests with no origin (like mobile apps, Postman, or curl requests)
-        if (!origin) {
-          console.log('✅ CORS: Allowing request with no origin');
-          return callback(null, true);
-        }
-        
-        // Check if origin is in allowed list
-        if (allowedOrigins.includes(origin)) {
-          console.log(`✅ CORS: Allowing origin: ${origin}`);
-          callback(null, true);
-        } else {
-          console.warn(`⚠️ CORS: Blocked origin: ${origin}`);
-          console.warn(`⚠️ CORS: Allowed origins: ${allowedOrigins.join(', ')}`);
-          // In production, reject blocked origins
-          if (process.env.NODE_ENV === 'production') {
-            callback(new Error(`Origin ${origin} is not allowed by CORS`));
-          } else {
-            // In development, allow all origins for debugging
-            console.log(`⚠️ CORS: Allowing blocked origin in development mode`);
-            callback(null, true);
-          }
-        }
-      },
-      credentials: true,
-      methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS', 'HEAD'],
-      allowedHeaders: [
-        'Content-Type',
-        'Authorization',
-        'Accept',
-        'Origin',
-        'X-Requested-With',
-      ],
-      exposedHeaders: [
-        'Content-Type',
-        'Authorization',
-      ],
-      preflightContinue: false,
-      optionsSuccessStatus: 204,
-    }));
-    console.log('✅ Express CORS middleware enabled');
-
-    // Also enable CORS in NestJS for additional safety
+    // Enable CORS in NestJS - simple and reliable
     app.enableCors({
       origin: allowedOrigins,
       credentials: true,
@@ -119,10 +71,11 @@ async function bootstrap() {
       preflightContinue: false,
       optionsSuccessStatus: 204,
     });
-    console.log('✅ NestJS CORS also enabled');
+    console.log('✅ CORS enabled');
 
     // Increase body size limit for large inventory files (50MB)
     console.log('🔄 Setting up Express middleware...');
+    const expressApp = app.getHttpAdapter().getInstance();
     expressApp.use(express.json({ limit: '50mb' }));
     expressApp.use(express.urlencoded({ limit: '50mb', extended: true }));
     console.log('✅ Express middleware configured');
