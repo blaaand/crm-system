@@ -57,21 +57,29 @@ export default function KanbanColumn({ status, title, requests }: KanbanColumnPr
   })
 
   return (
-    <div className="h-full w-full">
+    <div 
+      ref={setNodeRef}
+      className="h-full w-full"
+    >
       <div className={`h-full rounded-xl p-4 border-2 transition-all duration-200 ${getColumnColor(status)} ${
-        isOver ? 'ring-4 ring-primary-300 ring-opacity-50 scale-105' : ''
+        isOver ? 'ring-4 ring-primary-400 ring-opacity-75 scale-[1.02] border-primary-400 shadow-2xl' : ''
       }`}>
-        <div className="flex items-center justify-between mb-4 pb-3 border-b-2 border-gray-300">
-          <h3 className="text-base font-bold text-gray-900">{title}</h3>
-          <span className={`inline-flex items-center px-3 py-1.5 rounded-lg text-sm font-bold shadow-sm ${getBadgeColor(status)}`}>
+        <div className={`flex items-center justify-between mb-4 pb-3 border-b-2 transition-colors duration-200 ${
+          isOver ? 'border-primary-400' : 'border-gray-300'
+        }`}>
+          <h3 className={`text-base font-bold transition-colors duration-200 ${
+            isOver ? 'text-primary-700' : 'text-gray-900'
+          }`}>{title}</h3>
+          <span className={`inline-flex items-center px-3 py-1.5 rounded-lg text-sm font-bold shadow-sm transition-all duration-200 ${
+            isOver ? 'scale-110' : ''
+          } ${getBadgeColor(status)}`}>
             {requests.length}
           </span>
         </div>
         
         <div
-          ref={setNodeRef}
-          className={`flex-1 space-y-4 transition-colors duration-200 overflow-y-auto ${
-            isOver ? 'bg-primary-50 bg-opacity-30 rounded-lg p-2' : ''
+          className={`flex-1 space-y-4 transition-colors duration-200 overflow-y-auto min-h-[200px] ${
+            isOver ? 'bg-primary-50 bg-opacity-50 rounded-lg p-3' : ''
           }`}
           style={{ height: 'calc(100vh - 200px)' }}
         >
@@ -80,8 +88,10 @@ export default function KanbanColumn({ status, title, requests }: KanbanColumnPr
             strategy={verticalListSortingStrategy}
           >
             {requests.length === 0 ? (
-              <div className="flex items-center justify-center h-32 text-gray-400 text-sm border-2 border-dashed border-gray-300 rounded-lg">
-                اسحب الطلبات هنا
+              <div className={`flex items-center justify-center h-32 text-gray-400 text-sm border-2 border-dashed rounded-lg transition-all duration-200 ${
+                isOver ? 'border-primary-400 bg-primary-50 text-primary-700 font-bold scale-105' : 'border-gray-300'
+              }`}>
+                {isOver ? '⬇️ اترك الكرت هنا' : 'اسحب الطلبات هنا'}
               </div>
             ) : (
               requests.map((request) => (

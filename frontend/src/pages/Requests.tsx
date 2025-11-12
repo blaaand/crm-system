@@ -9,6 +9,10 @@ import {
   PointerSensor,
   useSensor,
   useSensors,
+  closestCenter,
+  rectIntersection,
+  pointerWithin,
+  CollisionDetection,
 } from '@dnd-kit/core'
 import { requestsService } from '../services/requestsService'
 import { Request, RequestStatus } from '../types'
@@ -47,6 +51,24 @@ export default function Requests() {
     })
   )
 
+  // Improved collision detection - prefers pointerWithin, then rectIntersection, then closestCenter
+  const collisionDetection: CollisionDetection = (args) => {
+    // First, try pointerWithin - if pointer is within a droppable, use it
+    const pointerCollisions = pointerWithin(args)
+    if (pointerCollisions.length > 0) {
+      return pointerCollisions
+    }
+
+    // Second, try rectIntersection - if rectangles intersect, use it
+    const rectCollisions = rectIntersection(args)
+    if (rectCollisions.length > 0) {
+      return rectCollisions
+    }
+
+    // Finally, use closestCenter as fallback
+    return closestCenter(args)
+  }
+
   const { data: kanbanData, isLoading } = useQuery(
     'kanbanData',
     requestsService.getKanbanData
@@ -78,12 +100,26 @@ export default function Requests() {
     if (!over) return
 
     const request = findRequestById(active.id as string)
-    // If dropped over a card, over.id is the card id. Use its containerId (column id)
-    const overData: any = over.data?.current
-    const containerId = overData?.sortable?.containerId || (over.id as string)
-    const newStatus = containerId as RequestStatus
+    if (!request) return
 
-    if (request && request.currentStatus !== newStatus) {
+    // Determine the target status
+    let newStatus: RequestStatus | null = null
+
+    // If over.id is a RequestStatus (column), use it directly
+    if (statusOrder.includes(over.id as RequestStatus)) {
+      newStatus = over.id as RequestStatus
+    } else {
+      // If dropped over a card, try to get its containerId (column id)
+      const overData: any = over.data?.current
+      if (overData?.sortable?.containerId) {
+        newStatus = overData.sortable.containerId as RequestStatus
+      } else if (statusOrder.includes(over.id as RequestStatus)) {
+        newStatus = over.id as RequestStatus
+      }
+    }
+
+    // If we have a valid new status and it's different from current, show modal
+    if (newStatus && request.currentStatus !== newStatus) {
       setSelectedRequest(request)
       setTargetStatus(newStatus)
       setMoveModalOpen(true)
@@ -284,6 +320,7 @@ export default function Requests() {
           </button>
           <DndContext
             sensors={sensors}
+            collisionDetection={collisionDetection}
             onDragStart={handleDragStart}
             onDragEnd={handleDragEnd}
           >
