@@ -83,16 +83,22 @@ async function bootstrap() {
     });
     console.log('✅ Swagger documentation configured at /api/docs');
 
-  // Use consistent port
-  const port = process.env.PORT || 8080;
-  
-  try {
-    await app.listen(port, '0.0.0.0');
-    console.log(`🚀 Application is running on: http://0.0.0.0:${port}`);
-    console.log(`📚 API Documentation: http://0.0.0.0:${port}/api/docs`);
-    console.log(`✅ Server started successfully on port ${port}`);
+    // Use consistent port
+    const port = process.env.PORT || 8080;
+    console.log(`🔌 Starting server on port ${port}...`);
+    
+    try {
+      await app.listen(port, '0.0.0.0');
+      console.log(`🚀 Application is running on: http://0.0.0.0:${port}`);
+      console.log(`📚 API Documentation: http://0.0.0.0:${port}/api/docs`);
+      console.log(`✅ Server started successfully on port ${port}`);
+      console.log(`🔗 Health check: http://0.0.0.0:${port}/api/health`);
+    } catch (error) {
+      console.error('❌ Failed to start server:', error);
+      process.exit(1);
+    }
   } catch (error) {
-    console.error('❌ Failed to start server:', error);
+    console.error('❌ Failed to create app:', error);
     process.exit(1);
   }
 }
