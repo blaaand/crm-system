@@ -366,7 +366,7 @@ export default function Clients() {
               className="btn-primary"
               onClick={() => {
                 const rows = [
-                  ['الاسم','الهاتف','الحالة','عدد الطلبات','تاريخ الإنشاء','آخر تحديث','ملاحظات'],
+                  ['الاسم','الهاتف','الحالة','عدد الطلبات','تاريخ الإنشاء','آخر تحديث','ملاحظات','الموظف المنشئ'],
                   ...filteredClients.map(c => [
                     c.name,
                     c.phonePrimary,
@@ -374,7 +374,8 @@ export default function Clients() {
                     c._count?.requests || 0,
                     new Date(c.createdAt).toLocaleString('ar-SA', { calendar: 'gregory' }),
                     new Date(c.updatedAt).toLocaleString('ar-SA', { calendar: 'gregory' }),
-                    c.notes || ''
+                    c.notes || '',
+                    c.createdBy?.name || ''
                   ])
                 ]
                 const wb = XLSX.utils.book_new()

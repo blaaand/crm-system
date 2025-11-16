@@ -553,6 +553,7 @@ export default function Requests() {
                     'آخر تحديث',
                     'آخر حالة',
                     'تفاصيل العميل',
+                    'الموظف المنشئ',
                   ]
 
                   // رؤوس خاصة بالتقسيط والكاش والتفاصيل الإضافية
@@ -731,6 +732,7 @@ export default function Requests() {
                       }),
                       lastStatus,
                       clientDetails,
+                      r.createdBy?.name || '',
                     ]
 
                     const d = r.installmentDetails
