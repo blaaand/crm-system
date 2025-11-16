@@ -22,6 +22,7 @@ import RequestCard from '../components/RequestCard'
 import MoveRequestModal from '../components/MoveRequestModal'
 import { PlusIcon, ViewColumnsIcon, ListBulletIcon, MagnifyingGlassIcon, ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline'
 import * as XLSX from 'xlsx'
+import toast from 'react-hot-toast'
 
 const statusOrder: RequestStatus[] = [
   RequestStatus.AWAITING_CLIENT,
@@ -64,6 +65,7 @@ export default function Requests() {
   const [exportModalOpen, setExportModalOpen] = useState(false)
   const [exportFromDate, setExportFromDate] = useState('')
   const [exportToDate, setExportToDate] = useState('')
+  const [exporting, setExporting] = useState(false)
   const [activeRequest, setActiveRequest] = useState<Request | null>(null)
   const [moveModalOpen, setMoveModalOpen] = useState(false)
   const [selectedRequest, setSelectedRequest] = useState<Request | null>(null)
@@ -676,6 +678,9 @@ export default function Requests() {
                     ]
 
                     const d = r.installmentDetails
+                    const obligationTypesSafe = Array.isArray(d?.obligationTypes)
+                      ? d!.obligationTypes
+                      : []
 
                     const installmentRow = [
                       d?.carName || '',
@@ -691,7 +696,7 @@ export default function Requests() {
                       d?.salary ?? '',
                       d?.insurancePercentage ?? '',
                       d?.hasServiceStop ? 'نعم' : 'لا',
-                      (d?.obligationTypes || []).join(', '),
+                      obligationTypesSafe.join(', '),
                       d?.deductionPercentage ?? '',
                       d?.obligation1 ?? '',
                       d?.obligation2 ?? '',
