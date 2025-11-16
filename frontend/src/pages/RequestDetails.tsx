@@ -1150,15 +1150,15 @@ export default function RequestDetails() {
           )}
 
           {/* تحليل ايراد سريع (مخفي لتجنب التكرار؛ يوجد تحليل مفصل داخل بطاقة تفاصيل التقسيط) */}
-          {false && (() => {
+          {false && request && (() => {
             // Compute sale price and expenses based on type
             let sale = 0
             let expenses = 0
             let expensesWithoutCommission = 0
             // عمولة البائع: 300 للتقسيط، 200 للكاش
-            const sellerCommission = request.type === 'INSTALLMENT' ? 300 : 200
-            if (request.type === 'INSTALLMENT' && request.installmentDetails) {
-              const d = request.installmentDetails
+            const sellerCommission = request!.type === 'INSTALLMENT' ? 300 : 200
+            if (request!.type === 'INSTALLMENT' && request!.installmentDetails) {
+              const d = request!.installmentDetails!
               const car = Number(d.carPrice || 0)
               const add = Number(d.additionalFees || 0)
               const ship = Number(d.shipping || 0)
@@ -1173,7 +1173,7 @@ export default function RequestDetails() {
               expensesWithoutCommission = reg + ship + plate + other + supportAmount
               // مصروفات البيع (شاملة عمولة البائع)
               expenses = expensesWithoutCommission + sellerCommission
-            } else if (request.type === 'CASH' && customFields) {
+            } else if (request!.type === 'CASH' && customFields) {
               const cf = customFields
               sale = Number(cf.totalWithPlateNoTax || 0)
               const ship = Number(cf.shippingPrice || 0)
