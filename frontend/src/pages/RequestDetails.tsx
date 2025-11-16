@@ -368,10 +368,10 @@ export default function RequestDetails() {
 
   return (
     <div>
-      <div className="mb-6">
+      <div className="mb-6 flex justify-between items-center">
         <Link
           to="/requests"
-          className="inline-flex items-center text-sm text-gray-500 hover:text-gray-700"
+          className="btn-outline inline-flex items-center text-sm"
         >
           <ArrowLeftIcon className="h-4 w-4 ml-1" />
           العودة للطلبات

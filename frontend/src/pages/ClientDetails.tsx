@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from 'react-query'
 import { clientsService } from '../services/clientsService'
 import { requestsService } from '../services/requestsService'
 import { formatDateTime, getRelativeTime } from '../utils/dateUtils'
-import { Comment } from '../types'
+import { Comment, UserRole } from '../types'
 import { 
   ArrowLeftIcon, 
   PlusIcon, 
@@ -15,12 +15,14 @@ import {
 } from '@heroicons/react/24/outline'
 import toast from 'react-hot-toast'
 import * as XLSX from 'xlsx'
+import { useAuthStore } from '../stores/authStore'
 
 export default function ClientDetails() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const [commentText, setCommentText] = useState('')
+  const { user } = useAuthStore()
   
   const { data: client, isLoading } = useQuery(
     ['client', id],
@@ -108,23 +110,18 @@ export default function ClientDetails() {
 
   const requests = requestsData?.requests || []
 
+  const canEditOrDelete =
+    !!user &&
+    (user.role === UserRole.ADMIN ||
+      user.role === UserRole.MANAGER ||
+      user.id === client.createdById)
+
   return (
     <div>
-      <div className="mb-6">
+      <div className="mb-6 flex justify-between items-center">
         <Link
           to="/clients"
-          className="inline-flex items-center text-sm text-gray-500 hover:text-gray-700"
-        >
-          <ArrowLeftIcon className="h-4 w-4 ml-1" />
-          العودة للعملاء
-        </Link>
-      </div>
-
-      {/* زر عائم للعودة للعملاء يبقى ظاهر أثناء التمرير */}
-      <div className="fixed right-4 bottom-4 z-40">
-        <Link
-          to="/clients"
-          className="btn-outline shadow-lg bg-white/90 hover:bg-white text-sm px-4 py-2"
+          className="btn-outline inline-flex items-center text-sm"
         >
           <ArrowLeftIcon className="h-4 w-4 ml-1" />
           العودة للعملاء
@@ -489,20 +486,24 @@ export default function ClientDetails() {
             </div>
           </div>
 
-          <div className="mt-6">
-            <Link
-              to={`/clients/${id}/edit`}
-              className="btn-outline w-full text-center"
-            >
-              تعديل بيانات العميل
-            </Link>
-            <button
-              className="btn-danger w-full mt-3"
-              onClick={handleDeleteClient}
-              disabled={deleteMutation.isLoading}
-            >
-              {deleteMutation.isLoading ? 'جاري الحذف...' : 'حذف العميل'}
-            </button>
+          <div className="mt-6 space-y-3">
+            {canEditOrDelete && (
+              <Link
+                to={`/clients/${id}/edit`}
+                className="btn-outline w-full text-center"
+              >
+                تعديل بيانات العميل
+              </Link>
+            )}
+            {canEditOrDelete && (
+              <button
+                className="btn-danger w-full"
+                onClick={handleDeleteClient}
+                disabled={deleteMutation.isLoading}
+              >
+                {deleteMutation.isLoading ? 'جاري الحذف...' : 'حذف العميل'}
+              </button>
+            )}
           </div>
         </div>
       </div>

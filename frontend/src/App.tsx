@@ -6,6 +6,7 @@ import Dashboard from './pages/Dashboard'
 import Clients from './pages/Clients'
 import ClientDetails from './pages/ClientDetails'
 import NewClient from './pages/NewClient'
+import EditClient from './pages/EditClient'
 import Requests from './pages/Requests'
 import RequestDetails from './pages/RequestDetails'
 import NewRequest from './pages/NewRequest'
@@ -63,6 +64,7 @@ function App() {
         <Route path="/clients" element={<Clients />} />
         <Route path="/clients/new" element={<NewClient />} />
         <Route path="/clients/:id" element={<ClientDetails />} />
+        <Route path="/clients/:id/edit" element={<EditClient />} />
         <Route path="/requests" element={<Requests />} />
         <Route path="/requests/new" element={<NewRequest />} />
         <Route path="/requests/:id" element={<RequestDetails />} />

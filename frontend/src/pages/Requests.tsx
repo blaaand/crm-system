@@ -16,7 +16,7 @@ import {
   CollisionDetection,
 } from '@dnd-kit/core'
 import { requestsService } from '../services/requestsService'
-import { Request, RequestStatus } from '../types'
+import { Request, RequestStatus, RequestType } from '../types'
 import KanbanColumn from '../components/KanbanColumn'
 import RequestCard from '../components/RequestCard'
 import MoveRequestModal from '../components/MoveRequestModal'
@@ -32,11 +32,38 @@ const statusOrder: RequestStatus[] = [
   RequestStatus.NOT_SOLD,
 ]
 
+const getStatusTitle = (status: RequestStatus): string => {
+  const titles: Record<string, string> = {
+    [RequestStatus.NOT_ANSWERED]: 'عميل لم يتم الرد',
+    [RequestStatus.AWAITING_CLIENT]: 'بانتظار رد العميل',
+    [RequestStatus.FOLLOW_UP]: 'في المتابعة',
+    [RequestStatus.AWAITING_DOCS]: 'بانتظار الأوراق',
+    [RequestStatus.AWAITING_BANK_REP]: 'بانتظار رد مندوب البنك',
+    [RequestStatus.SOLD]: 'تم البيع',
+    [RequestStatus.NOT_SOLD]: 'لم يتم البيع',
+  }
+  return titles[status] || status
+}
+
+const getTypeTitle = (type: RequestType): string => {
+  switch (type) {
+    case RequestType.CASH:
+      return 'كاش'
+    case RequestType.INSTALLMENT:
+      return 'تقسيط'
+    default:
+      return 'غير محدد'
+  }
+}
+
 export default function Requests() {
   const [viewMode, setViewMode] = useState<'kanban' | 'list'>('kanban')
   const [globalSearch, setGlobalSearch] = useState('')
   const [fromDate, setFromDate] = useState('')
   const [toDate, setToDate] = useState('')
+  const [exportModalOpen, setExportModalOpen] = useState(false)
+  const [exportFromDate, setExportFromDate] = useState('')
+  const [exportToDate, setExportToDate] = useState('')
   const [activeRequest, setActiveRequest] = useState<Request | null>(null)
   const [moveModalOpen, setMoveModalOpen] = useState(false)
   const [selectedRequest, setSelectedRequest] = useState<Request | null>(null)
@@ -259,11 +286,50 @@ export default function Requests() {
   // filters
   const filterReq = (r: any) => {
     const tCreated = new Date(r.createdAt).getTime()
-    const inDate = (!fromDate || tCreated >= new Date(fromDate).getTime()) && (!toDate || tCreated <= new Date(toDate).getTime() + 24*60*60*1000 - 1)
+    const inDate =
+      (!fromDate || tCreated >= new Date(fromDate).getTime()) &&
+      (!toDate || tCreated <= new Date(toDate).getTime() + 24 * 60 * 60 * 1000 - 1)
     if (!inDate) return false
     if (!globalSearch) return true
-    const text = [r.title, r.client?.name, r.client?.phonePrimary, r.assignedTo?.name, r.installmentDetails?.financingBank?.name, r.price]?.map(x=>String(x||'')).join(' ').toLowerCase()
+    const text = [
+      r.title,
+      r.client?.name,
+      r.client?.phonePrimary,
+      r.client?.city,
+      r.assignedTo?.name,
+      r.installmentDetails?.financingBank?.name,
+      r.price,
+    ]
+      ?.map((x) => String(x || ''))
+      .join(' ')
+      .toLowerCase()
     return text.includes(globalSearch.toLowerCase())
+  }
+
+  const filterReqForExport = (r: any) => {
+    const tCreated = new Date(r.createdAt).getTime()
+    const inDate =
+      (!exportFromDate || tCreated >= new Date(exportFromDate).getTime()) &&
+      (!exportToDate || tCreated <= new Date(exportToDate).getTime() + 24 * 60 * 60 * 1000 - 1)
+    return inDate
+  }
+
+  const handlePreset = (preset: 'all' | 'thisMonth' | 'lastMonth') => {
+    const today = new Date()
+    if (preset === 'all') {
+      setExportFromDate('')
+      setExportToDate('')
+    } else if (preset === 'thisMonth') {
+      const start = new Date(today.getFullYear(), today.getMonth(), 1)
+      const end = new Date(today.getFullYear(), today.getMonth() + 1, 0)
+      setExportFromDate(start.toISOString().slice(0, 10))
+      setExportToDate(end.toISOString().slice(0, 10))
+    } else if (preset === 'lastMonth') {
+      const start = new Date(today.getFullYear(), today.getMonth() - 1, 1)
+      const end = new Date(today.getFullYear(), today.getMonth(), 0)
+      setExportFromDate(start.toISOString().slice(0, 10))
+      setExportToDate(end.toISOString().slice(0, 10))
+    }
   }
 
   return (
@@ -292,84 +358,10 @@ export default function Requests() {
           >تطبيق</button>
           <button
             className="btn-primary"
-            onClick={async () => {
-              const baseList = (kanbanData||[]).flatMap(c=>c.requests).filter(filterReq)
-              // Fetch full details for each request to include events/comments/details
-              const detailed = await Promise.all(
-                baseList.map(async (r) => {
-                  try {
-                    const full = await requestsService.getRequest(r.id)
-                    return full
-                  } catch {
-                    return r
-                  }
-                })
-              )
-
-              const header = [
-                'المعرف',
-                'العنوان',
-                'اسم العميل',
-                'هاتف العميل',
-                'الحالة الحالية',
-                'نوع الطلب',
-                'سعر البيع',
-                'تاريخ الإنشاء',
-                'آخر تحديث',
-                'تفاصيل العميل',
-                'تفاصيل كاش/تقسيط',
-                'الأحداث (التحركات)',
-                'التعليقات',
-              ]
-
-              const rows: any[] = [header]
-
-              for (const r of detailed) {
-                const clientDetails = r.client ? `${r.client.name || ''} | ${r.client.phonePrimary || ''}` : ''
-                const typeDetails = r.type === 'INSTALLMENT' && r.installmentDetails
-                  ? `بنك: ${r.installmentDetails.financingBank?.name || ''} | أشهر: ${r.installmentDetails.installmentMonths || ''}`
-                  : r.type === 'CASH'
-                    ? `اسم السيارة: ${r.customFields?.carName || ''}`
-                    : ''
-
-                const eventsText = (r.events || []).map((e:any) => {
-                  const who = e.changedBy?.name || ''
-                  const when = new Date(e.createdAt).toLocaleString('ar-SA', { calendar: 'gregory' })
-                  const from = e.fromStatus || ''
-                  const to = e.toStatus || ''
-                  const cm = e.comment ? ` | تعليق: ${e.comment}` : ''
-                  return `${when} | ${who} | ${from} → ${to}${cm}`
-                }).join('\n')
-
-                const commentsText = ((r as any).comments || []).map((c:any) => {
-                  const who = c.author?.name || ''
-                  const when = new Date(c.createdAt).toLocaleString('ar-SA', { calendar: 'gregory' })
-                  return `${when} | ${who}: ${c.content || ''}`
-                }).join('\n')
-
-                rows.push([
-                  r.id,
-                  r.title,
-                  r.client?.name || '',
-                  r.client?.phonePrimary || '',
-                  r.currentStatus,
-                  r.type,
-                  r.price ?? '',
-                  new Date(r.createdAt).toLocaleString('ar-SA', { calendar: 'gregory' }),
-                  new Date(r.updatedAt).toLocaleString('ar-SA', { calendar: 'gregory' }),
-                  clientDetails,
-                  typeDetails,
-                  eventsText,
-                  commentsText,
-                ])
-              }
-
-              const wb = XLSX.utils.book_new()
-              const ws = XLSX.utils.aoa_to_sheet(rows)
-              XLSX.utils.book_append_sheet(wb, ws, 'الطلبات')
-              XLSX.writeFile(wb, `requests_${Date.now()}.xlsx`)
-            }}
-          >⬇️ تصدير Excel</button>
+            onClick={() => setExportModalOpen(true)}
+          >
+            ⬇️ تصدير Excel
+          </button>
           <div className="flex rounded-md shadow-sm">
             <button
               onClick={() => setViewMode('kanban')}
@@ -403,6 +395,415 @@ export default function Requests() {
           </Link>
         </div>
       </div>
+
+      {/* نافذة اختيار فترة تصدير الإكسل */}
+      {exportModalOpen && (
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40">
+          <div className="bg-white rounded-lg shadow-xl max-w-xl w-full p-6 space-y-4">
+            <h2 className="text-lg font-bold text-gray-900 mb-2">تصفية تقرير الإكسل حسب الفترة</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  من تاريخ (تاريخ إنشاء الطلب)
+                </label>
+                <input
+                  type="date"
+                  className="input"
+                  value={exportFromDate}
+                  onChange={(e) => setExportFromDate(e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  إلى تاريخ (تاريخ إنشاء الطلب)
+                </label>
+                <input
+                  type="date"
+                  className="input"
+                  value={exportToDate}
+                  onChange={(e) => setExportToDate(e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div className="flex flex-wrap gap-2 mt-2">
+              <button
+                type="button"
+                className="btn-outline text-xs"
+                onClick={() => handlePreset('all')}
+              >
+                كل الفترات
+              </button>
+              <button
+                type="button"
+                className="btn-outline text-xs"
+                onClick={() => handlePreset('thisMonth')}
+              >
+                هذا الشهر
+              </button>
+              <button
+                type="button"
+                className="btn-outline text-xs"
+                onClick={() => handlePreset('lastMonth')}
+              >
+                الشهر الماضي
+              </button>
+            </div>
+
+            <div className="mt-4 flex justify-end gap-3">
+              <button
+                type="button"
+                className="btn-outline"
+                onClick={() => setExportModalOpen(false)}
+              >
+                إغلاق
+              </button>
+              <button
+                type="button"
+                className="btn-primary"
+                onClick={async () => {
+                  const baseList = (kanbanData || [])
+                    .flatMap((c) => c.requests)
+                    .filter(filterReqForExport)
+
+                  const detailed: Request[] = await Promise.all(
+                    baseList.map(async (r) => {
+                      try {
+                        const full = await requestsService.getRequest(r.id)
+                        return full as Request
+                      } catch {
+                        return r as Request
+                      }
+                    })
+                  )
+
+                  // احسب الحد الأقصى لعدد الأحداث (حركات الحالة) عبر جميع الطلبات
+                  const maxEvents = detailed.reduce(
+                    (max, r) => Math.max(max, r.events?.length || 0),
+                    0
+                  )
+
+                  // رؤوس الأعمدة الأساسية
+                  const header: string[] = [
+                    'المعرف',
+                    'العنوان',
+                    'اسم العميل',
+                    'هاتف العميل',
+                    'المدينة',
+                    'الحالة الحالية',
+                    'نوع الطلب',
+                    'سعر البيع (شامل كل شيء)',
+                    'إجمالي التقسيط',
+                    'تاريخ الإنشاء',
+                    'آخر تحديث',
+                    'آخر حالة',
+                    'تفاصيل العميل',
+                  ]
+
+                  // رؤوس خاصة بالتقسيط والكاش والتفاصيل الإضافية
+                  const installmentHeaders = [
+                    '🚗 اسم السيارة',
+                    '🚗 سعر السيارة الأساسي',
+                    '🚗 زيادة إضافية',
+                    '🚗 الشحن',
+                    '🚗 التجيير',
+                    '🚗 زيادة أخرى',
+                    '🚗 اللوح',
+                    '📋 جهة العمل',
+                    '📋 العمر',
+                    '📋 البنك الذي ينزل عليه الراتب',
+                    '📋 مبلغ الراتب',
+                    '📋 نسبة التأمين (%)',
+                    '📋 هل يوجد إيقاف خدمات',
+                    '📊 أنواع الالتزامات',
+                    '📊 نسبة الاستقطاع (%)',
+                    '📊 التزام 1',
+                    '📊 التزام 2',
+                    '📊 مبلغ الفيزا',
+                    '📊 المبلغ المستقطع',
+                    '📊 إجمالي الالتزامات',
+                    '📊 المبلغ المسموح',
+                    '🏦 بنك التمويل',
+                    '🏦 نسبة الدفعة الأولى (%)',
+                    '🏦 نسبة الدفعة الأخيرة (%)',
+                    '🏦 هامش الربح السنوي (%)',
+                    '🏦 عدد أشهر التقسيط',
+                    '💰 سعر التكلفة (تحليل الإيراد)',
+                    '💰 نسبة الدعم (%)',
+                  ]
+
+                  const financingHeaders = [
+                    '💳 سعر السيارة (بدون ضريبة + مع اللوح)',
+                    '💳 مبلغ التمويل',
+                    '💳 الدفعة الأولى',
+                    '💳 الرسوم الإدارية',
+                    '💳 التأمين الشهري',
+                    '💳 القسط الشهري بدون التأمين',
+                    '💳 القسط الشهري مع التأمين',
+                    '💳 الدفعة الأخيرة',
+                    '💳 إجمالي المبلغ المدفوع',
+                  ]
+
+                  header.push(...installmentHeaders, ...financingHeaders)
+
+                  // أعمدة الحركات: حالة i / تاريخ النقل i / تعليق i
+                  for (let i = 1; i <= maxEvents; i++) {
+                    header.push(`حالة ${i}`, `تاريخ النقل ${i}`, `التعليق ${i}`)
+                  }
+
+                  const rows: any[] = [header]
+
+                  for (const r of detailed) {
+                    const clientDetails = r.client
+                      ? `${r.client.name || ''} | ${r.client.phonePrimary || ''}`
+                      : ''
+
+                    // حساب سعر البيع
+                    let salePrice = r.price ?? null
+                    let quickCost: number | null = null
+                    let supportPct: number | null = null
+
+                    if (r.type === RequestType.CASH && r.customFields) {
+                      const cf = r.customFields
+                      salePrice = cf.totalWithPlateAndTax ?? salePrice
+                      quickCost =
+                        typeof cf.quickCost === 'number'
+                          ? cf.quickCost
+                          : cf.quickCost
+                          ? Number(cf.quickCost)
+                          : null
+                      supportPct =
+                        typeof cf.supportPct === 'number'
+                          ? cf.supportPct
+                          : cf.supportPct
+                          ? Number(cf.supportPct)
+                          : null
+                    } else if (r.type === RequestType.INSTALLMENT && r.installmentDetails) {
+                      const d = r.installmentDetails
+                      const car = d.carPrice || 0
+                      const add = d.additionalFees || 0
+                      const ship = d.shipping || 0
+                      const reg = d.registration || 0
+                      const other = d.otherAdditions || 0
+                      const plate = d.plateNumber || 0
+                      const subtotal = car + add + ship + reg + other
+                      const tax = subtotal * 0.15
+                      salePrice = subtotal + tax + plate
+                    }
+
+                    // حساب إجمالي التقسيط (تقريبي بناء على نفس منطق صفحة التفاصيل)
+                    let totalInstallment: number | '' = ''
+                    if (r.type === RequestType.INSTALLMENT && r.installmentDetails) {
+                      const d = r.installmentDetails
+                      const car = d.carPrice || 0
+                      const add = d.additionalFees || 0
+                      const ship = d.shipping || 0
+                      const reg = d.registration || 0
+                      const other = d.otherAdditions || 0
+                      const plate = d.plateNumber || 0
+                      const subtotal = car + add + ship + reg + other
+                      const taxOnSubtotal = subtotal * 0.15
+                      const finalPriceWithTaxAndPlate = subtotal + taxOnSubtotal + plate
+
+                      const downPct = (d.downPaymentPercentage || 0) / 100
+                      const finalPct = (d.finalPaymentPercentage || 0) / 100
+                      const months = d.installmentMonths || 60
+                      const profitMargin = (d.profitMargin || 0) / 100
+                      const insurancePct = (d.insurancePercentage || 0) / 100
+
+                      const downPayment = downPct * finalPriceWithTaxAndPlate
+                      const finalPayment = finalPct * finalPriceWithTaxAndPlate
+                      const financingAmount = finalPriceWithTaxAndPlate - downPayment
+                      const adminFees = Math.round(
+                        Math.min(5000, financingAmount * 0.01) * 1.15
+                      )
+                      const totalInsurancePerYear =
+                        (financingAmount + adminFees) * insurancePct + profitMargin
+                      const monthlyInsurance = totalInsurancePerYear / 12
+                      const years = months / 12
+                      const marginTotal =
+                        (financingAmount + adminFees) * profitMargin * years
+                      const monthlyInstallmentWithoutInsurance =
+                        (financingAmount + adminFees + marginTotal - finalPayment) / months
+                      const monthlyInstallmentWithInsurance =
+                        monthlyInstallmentWithoutInsurance + monthlyInsurance
+                      totalInstallment =
+                        monthlyInstallmentWithInsurance * months +
+                        downPayment +
+                        finalPayment +
+                        adminFees
+                    }
+
+                    // آخر حالة (قبل الحالية)
+                    let lastStatus: string = getStatusTitle(r.initialStatus)
+                    if (r.events && r.events.length > 0) {
+                      const sortedEvents = [...r.events].sort(
+                        (a, b) =>
+                          new Date(a.createdAt).getTime() -
+                          new Date(b.createdAt).getTime()
+                      )
+                      const eventToCurrent = sortedEvents.find(
+                        (e) => e.toStatus === r.currentStatus
+                      )
+                      if (eventToCurrent?.fromStatus) {
+                        lastStatus = getStatusTitle(eventToCurrent.fromStatus)
+                      } else {
+                        const lastEvent = sortedEvents[sortedEvents.length - 1]
+                        if (lastEvent.fromStatus) {
+                          lastStatus = getStatusTitle(lastEvent.fromStatus)
+                        }
+                      }
+                    }
+
+                    const baseRow: any[] = [
+                      r.id,
+                      r.title,
+                      r.client?.name || '',
+                      r.client?.phonePrimary || '',
+                      r.client?.city || '',
+                      getStatusTitle(r.currentStatus),
+                      getTypeTitle(r.type as RequestType),
+                      salePrice ?? '',
+                      totalInstallment === '' ? '' : Math.round(totalInstallment),
+                      new Date(r.createdAt).toLocaleString('ar-SA', {
+                        calendar: 'gregory',
+                      }),
+                      new Date(r.updatedAt).toLocaleString('ar-SA', {
+                        calendar: 'gregory',
+                      }),
+                      lastStatus,
+                      clientDetails,
+                    ]
+
+                    const d = r.installmentDetails
+                    const cf = r.customFields || {}
+
+                    const installmentRow = [
+                      d?.carName || '',
+                      d?.carPrice ?? '',
+                      d?.additionalFees ?? '',
+                      d?.shipping ?? '',
+                      d?.registration ?? '',
+                      d?.otherAdditions ?? '',
+                      d?.plateNumber ?? '',
+                      d?.workOrganization || '',
+                      d?.age ?? '',
+                      d?.salaryBank?.name || '',
+                      d?.salary ?? '',
+                      d?.insurancePercentage ?? '',
+                      d?.hasServiceStop ? 'نعم' : 'لا',
+                      (d?.obligationTypes || []).join(', '),
+                      d?.deductionPercentage ?? '',
+                      d?.obligation1 ?? '',
+                      d?.obligation2 ?? '',
+                      d?.visaAmount ?? '',
+                      d?.deductedAmount ?? '',
+                      d?.totalObligations ?? '',
+                      d?.finalAmount ?? '',
+                      d?.financingBank?.name ||
+                        (d?.financingBankId === 'rajhi' ? 'بنك الراجحي' : ''),
+                      d?.downPaymentPercentage ?? '',
+                      d?.finalPaymentPercentage ?? '',
+                      d?.profitMargin ?? '',
+                      d?.installmentMonths ?? '',
+                      quickCost ?? '',
+                      supportPct ?? '',
+                    ]
+
+                    // إعادة استخدام حساب التمويل العام للحصول على نفس النتائج
+                    let financingRow: any[] = Array(financingHeaders.length).fill('')
+                    if (r.type === RequestType.INSTALLMENT && d) {
+                      const car = d.carPrice || 0
+                      const add = d.additionalFees || 0
+                      const ship = d.shipping || 0
+                      const reg = d.registration || 0
+                      const other = d.otherAdditions || 0
+                      const plate = d.plateNumber || 0
+                      const subtotal = car + add + ship + reg + other
+                      const taxOnSubtotal = subtotal * 0.15
+                      const finalPriceWithTaxAndPlate = subtotal + taxOnSubtotal + plate
+                      const priceWithPlateNoTax = subtotal + plate
+
+                      const downPct = (d.downPaymentPercentage || 0) / 100
+                      const finalPct = (d.finalPaymentPercentage || 0) / 100
+                      const months = d.installmentMonths || 60
+                      const profitMargin = (d.profitMargin || 0) / 100
+                      const insurancePct = (d.insurancePercentage || 0) / 100
+
+                      const downPayment = downPct * finalPriceWithTaxAndPlate
+                      const finalPayment = finalPct * finalPriceWithTaxAndPlate
+                      const financingAmount = finalPriceWithTaxAndPlate - downPayment
+                      const adminFees = Math.round(
+                        Math.min(5000, financingAmount * 0.01) * 1.15
+                      )
+                      const totalInsurancePerYear =
+                        (financingAmount + adminFees) * insurancePct + profitMargin
+                      const monthlyInsurance = totalInsurancePerYear / 12
+                      const years = months / 12
+                      const marginTotal =
+                        (financingAmount + adminFees) * profitMargin * years
+                      const monthlyInstallmentWithoutInsurance =
+                        (financingAmount + adminFees + marginTotal - finalPayment) / months
+                      const monthlyInstallmentWithInsurance =
+                        monthlyInstallmentWithoutInsurance + monthlyInsurance
+                      const totalAmountPaid =
+                        monthlyInstallmentWithInsurance * months +
+                        downPayment +
+                        finalPayment +
+                        adminFees
+
+                      financingRow = [
+                        Math.round(priceWithPlateNoTax),
+                        Math.round(financingAmount),
+                        Math.round(downPayment),
+                        Math.round(adminFees),
+                        Math.round(monthlyInsurance),
+                        Math.round(monthlyInstallmentWithoutInsurance),
+                        Math.round(monthlyInstallmentWithInsurance),
+                        Math.round(finalPayment),
+                        Math.round(totalAmountPaid),
+                      ]
+                    }
+
+                    // أعمدة الحركات (events)
+                    const eventCells: any[] = []
+                    const eventsSorted = (r.events || []).sort(
+                      (a, b) =>
+                        new Date(a.createdAt).getTime() -
+                        new Date(b.createdAt).getTime()
+                    )
+                    for (let i = 0; i < maxEvents; i++) {
+                      const ev = eventsSorted[i]
+                      if (ev) {
+                        eventCells.push(
+                          getStatusTitle(ev.toStatus),
+                          new Date(ev.createdAt).toLocaleString('ar-SA', {
+                            calendar: 'gregory',
+                          }),
+                          ev.comment || ''
+                        )
+                      } else {
+                        eventCells.push('', '', '')
+                      }
+                    }
+
+                    rows.push([...baseRow, ...installmentRow, ...financingRow, ...eventCells])
+                  }
+
+                  const wb = XLSX.utils.book_new()
+                  const ws = XLSX.utils.aoa_to_sheet(rows)
+                  XLSX.utils.book_append_sheet(wb, ws, 'الطلبات')
+                  XLSX.writeFile(wb, `requests_${Date.now()}.xlsx`)
+
+                  setExportModalOpen(false)
+                }}
+              >
+                تصدير
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {viewMode === 'kanban' ? (
         <div className="relative">

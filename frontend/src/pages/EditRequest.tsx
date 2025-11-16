@@ -558,21 +558,10 @@ export default function EditRequest() {
 
   return (
     <div>
-      <div className="mb-6">
+      <div className="mb-6 flex justify-between items-center">
         <Link
           to={`/requests/${id}`}
-          className="inline-flex items-center text-sm text-gray-500 hover:text-gray-700"
-        >
-          <ArrowLeftIcon className="h-4 w-4 ml-1" />
-          العودة لتفاصيل الطلب
-        </Link>
-      </div>
-
-      {/* زر عائم للعودة لتفاصيل الطلب يبقى ظاهر أثناء التمرير */}
-      <div className="fixed right-4 bottom-4 z-40">
-        <Link
-          to={`/requests/${id}`}
-          className="btn-outline shadow-lg bg-white/90 hover:bg-white text-sm px-4 py-2"
+          className="btn-outline inline-flex items-center text-sm"
         >
           <ArrowLeftIcon className="h-4 w-4 ml-1" />
           العودة لتفاصيل الطلب
