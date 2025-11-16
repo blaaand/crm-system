@@ -574,7 +574,10 @@ export default function Requests() {
 
                     if (r.type === RequestType.CASH && r.customFields) {
                       const cf = r.customFields
-                      salePrice = cf.totalWithPlateAndTax ?? salePrice
+                      salePrice =
+                        cf.totalWithPlateAndTax !== undefined
+                          ? Number(cf.totalWithPlateAndTax)
+                          : salePrice
                       quickCost =
                         typeof cf.quickCost === 'number'
                           ? cf.quickCost
@@ -589,12 +592,12 @@ export default function Requests() {
                           : null
                     } else if (r.type === RequestType.INSTALLMENT && r.installmentDetails) {
                       const d = r.installmentDetails
-                      const car = d.carPrice || 0
-                      const add = d.additionalFees || 0
-                      const ship = d.shipping || 0
-                      const reg = d.registration || 0
-                      const other = d.otherAdditions || 0
-                      const plate = d.plateNumber || 0
+                      const car = Number(d.carPrice ?? 0)
+                      const add = Number(d.additionalFees ?? 0)
+                      const ship = Number(d.shipping ?? 0)
+                      const reg = Number(d.registration ?? 0)
+                      const other = Number(d.otherAdditions ?? 0)
+                      const plate = Number(d.plateNumber ?? 0)
                       const subtotal = car + add + ship + reg + other
                       const tax = subtotal * 0.15
                       salePrice = subtotal + tax + plate
@@ -604,12 +607,12 @@ export default function Requests() {
                     let totalInstallment: number | '' = ''
                     if (r.type === RequestType.INSTALLMENT && r.installmentDetails) {
                       const d = r.installmentDetails
-                      const car = d.carPrice || 0
-                      const add = d.additionalFees || 0
-                      const ship = d.shipping || 0
-                      const reg = d.registration || 0
-                      const other = d.otherAdditions || 0
-                      const plate = d.plateNumber || 0
+                      const car = Number(d.carPrice ?? 0)
+                      const add = Number(d.additionalFees ?? 0)
+                      const ship = Number(d.shipping ?? 0)
+                      const reg = Number(d.registration ?? 0)
+                      const other = Number(d.otherAdditions ?? 0)
+                      const plate = Number(d.plateNumber ?? 0)
                       const subtotal = car + add + ship + reg + other
                       const taxOnSubtotal = subtotal * 0.15
                       const finalPriceWithTaxAndPlate = subtotal + taxOnSubtotal + plate
@@ -712,11 +715,11 @@ export default function Requests() {
                       d?.obligation2 ?? '',
                       d?.visaAmount ?? '',
                       d?.deductedAmount ?? '',
-                      (d
-                        ? (d.obligation1 || 0) +
-                          (d.obligation2 || 0) +
-                          ((d.visaAmount || 0) * 0.05)
-                        : ''),
+                      d
+                        ? Number(d.obligation1 ?? 0) +
+                          Number(d.obligation2 ?? 0) +
+                          Number(d.visaAmount ?? 0) * 0.05
+                        : '',
                       d?.finalAmount ?? '',
                       d?.financingBank?.name ||
                         (d?.financingBankId === 'rajhi' ? 'بنك الراجحي' : ''),
@@ -731,12 +734,12 @@ export default function Requests() {
                     // إعادة استخدام حساب التمويل العام للحصول على نفس النتائج
                     let financingRow: any[] = Array(financingHeaders.length).fill('')
                     if (r.type === RequestType.INSTALLMENT && d) {
-                      const car = d.carPrice || 0
-                      const add = d.additionalFees || 0
-                      const ship = d.shipping || 0
-                      const reg = d.registration || 0
-                      const other = d.otherAdditions || 0
-                      const plate = d.plateNumber || 0
+                      const car = Number(d.carPrice ?? 0)
+                      const add = Number(d.additionalFees ?? 0)
+                      const ship = Number(d.shipping ?? 0)
+                      const reg = Number(d.registration ?? 0)
+                      const other = Number(d.otherAdditions ?? 0)
+                      const plate = Number(d.plateNumber ?? 0)
                       const subtotal = car + add + ship + reg + other
                       const taxOnSubtotal = subtotal * 0.15
                       const finalPriceWithTaxAndPlate = subtotal + taxOnSubtotal + plate
