@@ -56,6 +56,15 @@ const getTypeTitle = (type: RequestType): string => {
   }
 }
 
+const workOrganizationLabelMap: Record<string, string> = {
+  PRIVATE_APPROVED: 'خاص معتمد',
+  PRIVATE_UNAPPROVED: 'خاص غير معتمد',
+  COMPANY: 'شركة',
+  GOVERNMENT: 'حكومي',
+  MILITARY: 'عسكري',
+  RETIRED: 'متقاعد',
+}
+
 export default function Requests() {
   const [viewMode, setViewMode] = useState<'kanban' | 'list'>('kanban')
   const [globalSearch, setGlobalSearch] = useState('')
@@ -688,7 +697,10 @@ export default function Requests() {
                       d?.registration ?? '',
                       d?.otherAdditions ?? '',
                       d?.plateNumber ?? '',
-                      d?.workOrganization || '',
+                      d?.workOrganization
+                        ? workOrganizationLabelMap[d.workOrganization] ||
+                          d.workOrganization
+                        : '',
                       d?.age ?? '',
                       d?.salaryBank?.name || '',
                       d?.salary ?? '',
