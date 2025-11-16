@@ -676,7 +676,6 @@ export default function Requests() {
                     ]
 
                     const d = r.installmentDetails
-                    const cf = r.customFields || {}
 
                     const installmentRow = [
                       d?.carName || '',
@@ -698,7 +697,11 @@ export default function Requests() {
                       d?.obligation2 ?? '',
                       d?.visaAmount ?? '',
                       d?.deductedAmount ?? '',
-                      d?.totalObligations ?? '',
+                      (d
+                        ? (d.obligation1 || 0) +
+                          (d.obligation2 || 0) +
+                          ((d.visaAmount || 0) * 0.05)
+                        : ''),
                       d?.finalAmount ?? '',
                       d?.financingBank?.name ||
                         (d?.financingBankId === 'rajhi' ? 'بنك الراجحي' : ''),
