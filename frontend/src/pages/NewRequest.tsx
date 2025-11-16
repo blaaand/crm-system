@@ -70,6 +70,7 @@ export default function NewRequest() {
   const preselectedClientId = searchParams.get('clientId')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [clientSearch, setClientSearch] = useState('')
+  const [clientCity, setClientCity] = useState('')
 
   const {
     register,
@@ -458,6 +459,15 @@ export default function NewRequest() {
     { enabled: !!watchedValues.clientId && watchedValues.clientId !== '' }
   )
 
+  // Sync editable client city state when selected client changes
+  useEffect(() => {
+    if (selectedClient) {
+      setClientCity(selectedClient.city || '')
+    } else {
+      setClientCity('')
+    }
+  }, [selectedClient])
+
   useEffect(() => {
     if (preselectedClientId) {
       setValue('clientId', preselectedClientId)
@@ -690,10 +700,28 @@ export default function NewRequest() {
     }
   )
 
-  const onSubmit = (data: RequestForm) => {
+  const onSubmit = async (data: RequestForm) => {
     console.log('Form data:', data)
     setIsSubmitting(true)
-    createRequestMutation.mutate(data)
+
+    try {
+      // إذا تم اختيار عميل، و المدينة المدخلة مختلفة، قم بتحديث مدينة العميل
+      if (
+        selectedClient &&
+        clientCity.trim() &&
+        clientCity.trim() !== (selectedClient.city || '').trim()
+      ) {
+        await clientsService.updateClient(selectedClient.id, {
+          city: clientCity.trim(),
+        })
+      }
+
+      createRequestMutation.mutate(data)
+    } catch (error) {
+      console.error('Error updating client city before creating request:', error)
+      toast.error('تعذر تحديث مدينة العميل')
+      setIsSubmitting(false)
+    }
   }
   
   const onError = (errors: any) => {
@@ -805,15 +833,19 @@ export default function NewRequest() {
                 )}
               </div>
 
-              {/* المدينة - أعلى نوع الطلب */}
-              {selectedClient && selectedClient.city && (
+              {/* المدينة - أعلى نوع الطلب (قابلة للتعديل ويتم تحديثها في بيانات العميل) */}
+              {selectedClient && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     المدينة
                   </label>
-                  <div className="input bg-gray-100 cursor-not-allowed">
-                    {selectedClient.city}
-                  </div>
+                  <input
+                    type="text"
+                    className="input"
+                    value={clientCity}
+                    onChange={(e) => setClientCity(e.target.value)}
+                    placeholder="مثال: الرياض"
+                  />
                 </div>
               )}
 

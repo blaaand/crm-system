@@ -120,6 +120,17 @@ export default function ClientDetails() {
         </Link>
       </div>
 
+      {/* زر عائم للعودة للعملاء يبقى ظاهر أثناء التمرير */}
+      <div className="fixed right-4 bottom-4 z-40">
+        <Link
+          to="/clients"
+          className="btn-outline shadow-lg bg-white/90 hover:bg-white text-sm px-4 py-2"
+        >
+          <ArrowLeftIcon className="h-4 w-4 ml-1" />
+          العودة للعملاء
+        </Link>
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
           {/* معلومات العميل */}

@@ -378,6 +378,17 @@ export default function RequestDetails() {
         </Link>
       </div>
 
+      {/* زر عائم للعودة للطلبات يبقى ظاهر أثناء التمرير */}
+      <div className="fixed right-4 bottom-4 z-40">
+        <Link
+          to="/requests"
+          className="btn-outline shadow-lg bg-white/90 hover:bg-white text-sm px-4 py-2"
+        >
+          <ArrowLeftIcon className="h-4 w-4 ml-1" />
+          العودة للطلبات
+        </Link>
+      </div>
+
       {/* Stage Navigation Bar */}
       {request && (
         <div className="mb-6">
@@ -970,8 +981,8 @@ export default function RequestDetails() {
                 </div>
               </div>
 
-              {/* معادلات التمويل */}
-              <div className="card" style={{ display: 'none' }}>
+              {/* معادلات التمويل / نتائج التمويل (تظهر بشكل مبسط) */}
+              <div className="card">
                 <div className="card-header bg-gradient-to-r from-purple-50 to-indigo-50">
                   <div className="flex items-center gap-2">
                     <BuildingLibraryIcon className="h-5 w-5 text-purple-600" />
@@ -1138,8 +1149,8 @@ export default function RequestDetails() {
             </div>
           )}
 
-          {/* تحليل ايراد سريع */}
-          {(() => {
+          {/* تحليل ايراد سريع (مخفي لتجنب التكرار؛ يوجد تحليل مفصل داخل بطاقة تفاصيل التقسيط) */}
+          {false && (() => {
             // Compute sale price and expenses based on type
             let sale = 0
             let expenses = 0

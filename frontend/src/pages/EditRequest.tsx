@@ -1,4 +1,4 @@
-import { /* useState, */ useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from 'react-query'
 import { useForm, useWatch } from 'react-hook-form'
@@ -252,6 +252,30 @@ export default function EditRequest() {
   const profitMargin = useWatch({ control, name: 'profitMargin' })
   const installmentMonths = useWatch({ control, name: 'installmentMonths' })
 
+  // Quick revenue analysis state (stored in customFields on the request)
+  const [quickCost, setQuickCost] = useState<string>('')
+  const [supportPct, setSupportPct] = useState<string>('')
+
+  // Load quick revenue values from existing customFields
+  useEffect(() => {
+    if (request?.customFields) {
+      try {
+        const cf =
+          typeof request.customFields === 'string'
+            ? JSON.parse(request.customFields)
+            : request.customFields
+        if (cf?.quickCost !== undefined && quickCost === '') {
+          setQuickCost(String(cf.quickCost))
+        }
+        if (cf?.supportPct !== undefined && supportPct === '') {
+          setSupportPct(String(cf.supportPct))
+        }
+      } catch (error) {
+        console.error('Error parsing customFields in EditRequest:', error)
+      }
+    }
+  }, [request?.customFields, quickCost, supportPct])
+
   // Check if selected bank is Rajhi
   const selectedFinancingBank = banksData && financingBankId ? banksData.find(b => b.id === financingBankId) : null
   const isRajhiSelected = selectedFinancingBank && (
@@ -465,7 +489,7 @@ export default function EditRequest() {
       updateRequestMutation.mutate(updateData)
     } else {
       // Handle INSTALLMENT requests
-      const updateData = {
+      const updateData: any = {
         price: data.price ? parseFloat(data.price) : undefined,
         installmentDetails: {
           carName: data.carName || undefined,
@@ -493,7 +517,33 @@ export default function EditRequest() {
           installmentMonths: data.installmentMonths ? parseInt(data.installmentMonths) : undefined,
         },
       }
-      
+
+      // Merge quick revenue (quickCost/supportPct) into customFields so it appears في تفاصيل الطلب
+      if (request) {
+        try {
+          const existingCustomFields = request.customFields
+            ? (typeof request.customFields === 'string'
+                ? JSON.parse(request.customFields)
+                : request.customFields)
+            : {}
+
+          const customFields: any = { ...existingCustomFields }
+
+          if (quickCost !== '') {
+            customFields.quickCost = parseFloat(quickCost)
+          }
+          if (supportPct !== '') {
+            customFields.supportPct = parseFloat(supportPct)
+          }
+
+          if (Object.keys(customFields).length > 0) {
+            updateData.customFields = JSON.stringify(customFields)
+          }
+        } catch (error) {
+          console.error('Error merging customFields in EditRequest:', error)
+        }
+      }
+
       updateRequestMutation.mutate(updateData)
     }
   }
@@ -512,6 +562,17 @@ export default function EditRequest() {
         <Link
           to={`/requests/${id}`}
           className="inline-flex items-center text-sm text-gray-500 hover:text-gray-700"
+        >
+          <ArrowLeftIcon className="h-4 w-4 ml-1" />
+          العودة لتفاصيل الطلب
+        </Link>
+      </div>
+
+      {/* زر عائم للعودة لتفاصيل الطلب يبقى ظاهر أثناء التمرير */}
+      <div className="fixed right-4 bottom-4 z-40">
+        <Link
+          to={`/requests/${id}`}
+          className="btn-outline shadow-lg bg-white/90 hover:bg-white text-sm px-4 py-2"
         >
           <ArrowLeftIcon className="h-4 w-4 ml-1" />
           العودة لتفاصيل الطلب
@@ -723,7 +784,7 @@ export default function EditRequest() {
                   </div>
                 </div>
 
-                {/* تحليل ايراد سريع (لا يتم حفظه) */}
+                {/* تحليل ايراد سريع */}
                 <div className="border-2 border-yellow-300 rounded-lg p-4 bg-yellow-50">
                     <h4 className="text-sm font-bold text-yellow-900 mb-3">💰 تحليل ايراد سريع</h4>
                   {(() => {
@@ -733,16 +794,16 @@ export default function EditRequest() {
                     const reg = parseFloat(watchedValues.registration || '0') || 0
                     const other = parseFloat(watchedValues.otherAdditions || '0') || 0
                     const plate = parseFloat(watchedValues.plateNumber || '0') || 0
-                    const priceWithPlateNoTax = (car + add + ship + reg + other) + plate
-                    const supportPct = parseFloat(((watchedValues as any)?._supportPct || '0')) || 0
-                    const supportAmount = priceWithPlateNoTax * 1.15 * (supportPct / 100)
+                    const priceWithPlateNoTax = car + add + ship + reg + other + plate
+                    const supportPctNumber = parseFloat(supportPct || '0') || 0
+                    const supportAmount = priceWithPlateNoTax * 1.15 * (supportPctNumber / 100)
                     // عمولة البائع: 300 للتقسيط، 200 للكاش
                     const sellerCommission = request?.type === 'INSTALLMENT' ? 300 : 200
                     // مصروفات البيع (بدون عمولة البائع)
                     const expensesWithoutCommission = reg + ship + plate + other + supportAmount
                     // مصروفات البيع (شاملة عمولة البائع)
                     const expenses = expensesWithoutCommission + sellerCommission
-                    const cost = parseFloat(((watchedValues as any)?._quickCost || '0')) || 0
+                    const cost = parseFloat(quickCost || '0') || 0
                     const net = priceWithPlateNoTax - cost - expenses
                     const pct = priceWithPlateNoTax > 0 ? (net / priceWithPlateNoTax) * 100 : 0
                     return (
@@ -753,12 +814,26 @@ export default function EditRequest() {
                         </div>
                         <div>
                           <label className="block text-sm font-semibold text-gray-800 mb-1">سعر التكلفة أو شراء السيارة</label>
-                          <input className="input" type="number" step="0.01" value={(watchedValues as any)?._quickCost || ''} onChange={(e)=>setValue('_quickCost' as any, e.target.value)} placeholder="0.00" />
+                          <input
+                            className="input"
+                            type="number"
+                            step="0.01"
+                            value={quickCost}
+                            onChange={(e) => setQuickCost(e.target.value)}
+                            placeholder="0.00"
+                          />
                         </div>
                         <div className="grid grid-cols-2 gap-3">
                           <div>
                             <label className="block text-sm font-semibold text-gray-800 mb-1">حسبة الدعم (%)</label>
-                            <input className="input" type="number" step="0.01" value={(watchedValues as any)?._supportPct || ''} onChange={(e)=>setValue('_supportPct' as any, e.target.value)} placeholder="أدخل النسبة" />
+                            <input
+                              className="input"
+                              type="number"
+                              step="0.01"
+                              value={supportPct}
+                              onChange={(e) => setSupportPct(e.target.value)}
+                              placeholder="أدخل النسبة"
+                            />
                           </div>
                           <div>
                             <label className="block text-sm font-semibold text-gray-800 mb-1">مبلغ حسبة الدعم</label>
