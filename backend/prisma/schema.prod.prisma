@@ -19,6 +19,8 @@ model User {
   phone        String?
   passwordHash String
   role         String    @default("AGENT")
+  /// Assistant (manager) that this user belongs to. Used for team hierarchy.
+  assistantId  String?
   lastLogin    DateTime?
   active       Boolean   @default(true)
   createdAt    DateTime  @default(now())

@@ -6,7 +6,9 @@ import { PlusIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline'
 import * as XLSX from 'xlsx'
 import { DndContext, PointerSensor, useSensor, useSensors, DragEndEvent, useDroppable, useDraggable } from '@dnd-kit/core'
 import toast from 'react-hot-toast'
-import { BulkClientEntry } from '../types'
+import { BulkClientEntry, UserRole } from '../types'
+import { useAuthStore } from '../stores/authStore'
+import { authService } from '../services/authService'
 
 type ParsedBulkEntry = {
   index: number
@@ -90,6 +92,8 @@ export default function Clients() {
   )
 
   const queryClient = useQueryClient()
+  const { user } = useAuthStore()
+  const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | 'ALL'>('ALL')
 
   const bulkCreateMutation = useMutation(
     (payload: { entries: BulkClientEntry[] }) => clientsService.bulkCreate(payload),
@@ -135,12 +139,25 @@ export default function Clients() {
     }
   )
 
+  // Employees for assistant/admin filtering
+  const { data: employeesData } = useQuery(
+    ['team-employees-for-clients'],
+    authService.getTeamEmployees,
+    {
+      enabled: !!user && (user.role === UserRole.ADMIN || user.role === UserRole.MANAGER),
+    }
+  )
+  const employees = employeesData?.employees || []
+
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
   )
 
   // Determine client buckets
-  const clients = data?.clients || []
+  const clients = (data?.clients || []).filter((c) => {
+    if (selectedEmployeeId === 'ALL') return true
+    return c.createdById === selectedEmployeeId
+  })
   const isNotInterested = (notes?: string) => (notes || '').includes('[NOT_INTERESTED]')
   const isAwaitingTagged = (notes?: string) => (notes || '').includes('[AWAITING_CLIENT]')
   const inAwaiting = (c: any) => isAwaitingTagged(c.notes) || ((c._count?.requests || 0) > 0)
@@ -272,6 +289,21 @@ export default function Clients() {
           </p>
         </div>
         <div className="mt-4 sm:mt-0 sm:ml-16 sm:flex-none flex flex-col sm:flex-row gap-2">
+          {(user?.role === UserRole.ADMIN || user?.role === UserRole.MANAGER) && (
+            <select
+              className="input text-sm max-w-xs"
+              value={selectedEmployeeId}
+              onChange={(e) => setSelectedEmployeeId(e.target.value as any)}
+            >
+              <option value="ALL">كل العملاء المسموح بهم</option>
+              {employees.map((emp: any) => (
+                <option key={emp.id} value={emp.id}>
+                  {emp.name}{' '}
+                  {emp.role === 'MANAGER' || emp.role === UserRole.MANAGER ? '(مساعد)' : ''}
+                </option>
+              ))}
+            </select>
+          )}
           <button
             type="button"
             className="btn-outline"

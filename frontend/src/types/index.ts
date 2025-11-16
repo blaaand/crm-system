@@ -45,6 +45,7 @@ export interface User {
   lastLogin?: string
   createdAt: string
   updatedAt: string
+  assistantId?: string | null
 }
 
 export interface Client {

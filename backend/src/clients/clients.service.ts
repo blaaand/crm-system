@@ -219,8 +219,19 @@ export class ClientsService {
       where.city = { contains: city, mode: 'insensitive' };
     }
 
-    // For non-admin users, only show clients they created
-    if (userRole !== UserRole.ADMIN && userRole !== UserRole.MANAGER) {
+    // For non-admin users, restrict by creator / team
+    if (userRole === UserRole.ADMIN) {
+      // Admin sees all clients
+    } else if (userRole === UserRole.MANAGER) {
+      // Manager sees clients they created + clients created by their team members
+      const teamMembers = await this.prisma.user.findMany({
+        where: { assistantId: userId },
+        select: { id: true },
+      });
+      const ids = [userId, ...teamMembers.map((m) => m.id)];
+      where.createdById = { in: ids };
+    } else {
+      // Regular users: only clients they created
       where.createdById = userId;
     }
 
@@ -329,11 +340,19 @@ export class ClientsService {
     }
 
     // Check permissions
-    if (
-      userRole !== UserRole.ADMIN &&
-      userRole !== UserRole.MANAGER &&
-      client.createdById !== userId
-    ) {
+    if (userRole === UserRole.ADMIN) {
+      // Admin can view any client
+    } else if (userRole === UserRole.MANAGER) {
+      // Manager can view clients they created or clients of their team members
+      const teamMembers = await this.prisma.user.findMany({
+        where: { assistantId: userId },
+        select: { id: true },
+      });
+      const allowedIds = new Set([userId, ...teamMembers.map((m) => m.id)]);
+      if (!allowedIds.has(client.createdById)) {
+        throw new ForbiddenException('ليس لديك صلاحية لعرض هذا العميل');
+      }
+    } else if (client.createdById !== userId) {
       throw new ForbiddenException('ليس لديك صلاحية لعرض هذا العميل');
     }
 

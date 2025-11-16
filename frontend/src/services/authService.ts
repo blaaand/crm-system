@@ -49,13 +49,21 @@ export const authService = {
     return response.data
   },
 
-  async adminUpdateUser(id: string, data: { role?: 'ADMIN' | 'MANAGER' | 'AGENT'; active?: boolean }): Promise<{ user: any }> {
+  async adminUpdateUser(
+    id: string,
+    data: { role?: 'ADMIN' | 'MANAGER' | 'AGENT'; active?: boolean; assistantId?: string | null }
+  ): Promise<{ user: any }> {
     const response = await api.patch(`/admin/users/${id}`, data)
     return response.data
   },
 
   async adminDeleteUser(id: string): Promise<{ message: string }> {
     const response = await api.delete(`/admin/users/${id}`)
+    return response.data
+  },
+
+  async getTeamEmployees(): Promise<{ employees: any[] }> {
+    const response = await api.get('/team/employees')
     return response.data
   },
 }

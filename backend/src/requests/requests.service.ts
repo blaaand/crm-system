@@ -500,15 +500,28 @@ export class RequestsService {
   async getKanbanData(userRole: UserRole, userId: string) {
     const where: any = {};
 
-    // For non-admin users, only show requests they created or are assigned to
-    if (userRole !== UserRole.ADMIN && userRole !== UserRole.MANAGER) {
+    if (userRole === UserRole.ADMIN) {
+      // Admin sees all requests
+    } else if (userRole === UserRole.MANAGER) {
+      // Manager sees own requests + team members' requests
+      const teamMembers = await this.prisma.user.findMany({
+        where: { assistantId: userId },
+        select: { id: true },
+      });
+      const ids = [userId, ...teamMembers.map((m) => m.id)];
+      where.OR = [
+        { createdById: { in: ids } },
+        { assignedToId: { in: ids } },
+      ];
+    } else {
+      // Regular users: only their own requests
       where.OR = [
         { createdById: userId },
         { assignedToId: userId },
       ];
     }
 
-      const requests = await this.prisma.request.findMany({
+    const requests = await this.prisma.request.findMany({
       where,
       include: {
         client: {
@@ -576,8 +589,21 @@ export class RequestsService {
   async getRequestStats(userRole: UserRole, userId: string) {
     const where: any = {};
 
-    // For non-admin users, only show stats for requests they created or are assigned to
-    if (userRole !== UserRole.ADMIN && userRole !== UserRole.MANAGER) {
+    if (userRole === UserRole.ADMIN) {
+      // Admin sees stats for all requests
+    } else if (userRole === UserRole.MANAGER) {
+      // Manager sees stats for own requests + team members' requests
+      const teamMembers = await this.prisma.user.findMany({
+        where: { assistantId: userId },
+        select: { id: true },
+      });
+      const ids = [userId, ...teamMembers.map((m) => m.id)];
+      where.OR = [
+        { createdById: { in: ids } },
+        { assignedToId: { in: ids } },
+      ];
+    } else {
+      // Regular users: only their own requests
       where.OR = [
         { createdById: userId },
         { assignedToId: userId },

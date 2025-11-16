@@ -218,6 +218,7 @@ export class AuthService {
         role: true,
         active: true,
         lastLogin: true,
+        assistantId: true,
       },
     });
 

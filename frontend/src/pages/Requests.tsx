@@ -16,12 +16,14 @@ import {
   CollisionDetection,
 } from '@dnd-kit/core'
 import { requestsService } from '../services/requestsService'
-import { Request, RequestStatus, RequestType } from '../types'
+import { Request, RequestStatus, RequestType, UserRole } from '../types'
 import KanbanColumn from '../components/KanbanColumn'
 import RequestCard from '../components/RequestCard'
 import MoveRequestModal from '../components/MoveRequestModal'
 import { PlusIcon, ViewColumnsIcon, ListBulletIcon, MagnifyingGlassIcon, ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline'
 import * as XLSX from 'xlsx'
+import { useAuthStore } from '../stores/authStore'
+import { authService } from '../services/authService'
 
 const statusOrder: RequestStatus[] = [
   RequestStatus.AWAITING_CLIENT,
@@ -78,6 +80,8 @@ export default function Requests() {
   const [selectedRequest, setSelectedRequest] = useState<Request | null>(null)
   const [targetStatus, setTargetStatus] = useState<RequestStatus | null>(null)
   const [currentOverStatus, setCurrentOverStatus] = useState<RequestStatus | null>(null)
+  const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | 'ALL'>('ALL')
+  const { user } = useAuthStore()
   const queryClient = useQueryClient()
   const kanbanScrollRef = useRef<HTMLDivElement>(null)
 
@@ -154,6 +158,17 @@ export default function Requests() {
     'kanbanData',
     requestsService.getKanbanData
   )
+
+  // Employees available for filtering (admin/manager only)
+  const { data: employeesData } = useQuery(
+    ['team-employees-for-requests'],
+    authService.getTeamEmployees,
+    {
+      enabled: !!user && (user.role === UserRole.ADMIN || user.role === UserRole.MANAGER),
+    }
+  )
+
+  const employees = employeesData?.employees || []
 
   const moveRequestMutation = useMutation(
     ({ id, toStatus, comment }: { id: string; toStatus: RequestStatus; comment?: string }) =>
@@ -299,6 +314,14 @@ export default function Requests() {
       (!fromDate || tCreated >= new Date(fromDate).getTime()) &&
       (!toDate || tCreated <= new Date(toDate).getTime() + 24 * 60 * 60 * 1000 - 1)
     if (!inDate) return false
+
+    // Filter by selected employee (admin/manager only)
+    if (selectedEmployeeId !== 'ALL') {
+      if (r.createdById !== selectedEmployeeId && r.assignedToId !== selectedEmployeeId) {
+        return false
+      }
+    }
+
     if (!globalSearch) return true
     const text = [
       r.title,
@@ -320,6 +343,15 @@ export default function Requests() {
     const inDate =
       (!exportFromDate || tCreated >= new Date(exportFromDate).getTime()) &&
       (!exportToDate || tCreated <= new Date(exportToDate).getTime() + 24 * 60 * 60 * 1000 - 1)
+
+    if (!inDate) return false
+
+    if (selectedEmployeeId !== 'ALL') {
+      if (r.createdById !== selectedEmployeeId && r.assignedToId !== selectedEmployeeId) {
+        return false
+      }
+    }
+
     return inDate
   }
 
@@ -351,6 +383,20 @@ export default function Requests() {
           </p>
         </div>
         <div className="mt-4 sm:mt-0 sm:ml-16 sm:flex-none flex gap-2 items-center">
+          {(user?.role === UserRole.ADMIN || user?.role === UserRole.MANAGER) && (
+            <select
+              className="input text-sm max-w-xs"
+              value={selectedEmployeeId}
+              onChange={(e) => setSelectedEmployeeId(e.target.value as any)}
+            >
+              <option value="ALL">كل الطلبات المسموح بها</option>
+              {employees.map((emp: any) => (
+                <option key={emp.id} value={emp.id}>
+                  {emp.name} {emp.role === 'MANAGER' || emp.role === UserRole.MANAGER ? '(مساعد)' : ''}
+                </option>
+              ))}
+            </select>
+          )}
           <div className="hidden md:block">
             <div className="relative">
               <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">

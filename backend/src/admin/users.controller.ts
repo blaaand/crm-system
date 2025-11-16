@@ -38,6 +38,11 @@ class UpdateEmployeeDto {
   @IsEnum(UserRole)
   role?: UserRole;
 
+  @ApiProperty({ required: false, description: 'Assistant (manager) user id for team hierarchy' })
+  @IsOptional()
+  @IsString()
+  assistantId?: string | null;
+
   @ApiProperty({ required: false })
   @IsOptional()
   @IsBoolean()
@@ -67,6 +72,7 @@ export class UsersAdminController {
         active: true,
         lastLogin: true,
         createdAt: true,
+        assistantId: true,
       },
     })
     return { users }
@@ -122,6 +128,7 @@ export class UsersAdminController {
     const data: any = {}
     if (dto.role) data.role = dto.role
     if (typeof dto.active === 'boolean') data.active = dto.active
+    if (dto.assistantId !== undefined) data.assistantId = dto.assistantId
     const user = await this.prisma.user.update({
       where: { id },
       data,

@@ -29,6 +29,7 @@ const navigation = [
   { name: 'لوحة التحكم', href: '/dashboard', icon: HomeIcon },
   { name: 'العملاء', href: '/clients', icon: UsersIcon },
   { name: 'الطلبات', href: '/requests', icon: ClipboardDocumentListIcon },
+  { name: 'الفريق', href: '/team', icon: UsersIcon },
   { name: 'المخزون', href: '/inventory', icon: CubeIcon },
   { name: 'البنوك والتمويل', href: '/banks-financing', icon: BanknotesIcon },
   { name: 'الملفات', href: '/files', icon: FolderIcon },
@@ -52,6 +53,10 @@ export default function Layout({ children }: LayoutProps) {
     // Admin-only sections
     if (item.href === '/admin' || item.href === '/formulas' || item.href === '/audit') {
       return hasAnyRole([UserRole.ADMIN])
+    }
+    // Team page visible to ADMIN and MANAGER
+    if (item.href === '/team') {
+      return hasAnyRole([UserRole.ADMIN, UserRole.MANAGER])
     }
     // Files page is visible to all roles (upload permission handled in page)
     // Inventory and Banks should be visible to all roles (AGENT read-only handled in page)
